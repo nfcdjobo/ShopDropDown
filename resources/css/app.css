@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ---------- Font Awesome Free ---------- */
+@import "@fortawesome/fontawesome-free/css/fontawesome.css";
+@import "@fortawesome/fontawesome-free/css/solid.css";
+@import "@fortawesome/fontawesome-free/css/regular.css";
+@import "@fortawesome/fontawesome-free/css/brands.css";
+
+/* ---------- Sources scannées ---------- */
+@source "../**/*.blade.php";
+@source "../**/*.js";
+@source "../../app/**/*.php";
+@source "../../storage/framework/views/*.php";
+
+/* ---------- Design system ---------- */
+@theme {
+    /* Typographies */
+    --font-display: "Fraunces", ui-serif, Georgia, serif;
+    --font-sans:    "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+    /* Ivory — fond principal, chaleureux */
+    --color-ivory-50:  #FDFBF7;
+    --color-ivory-100: #FAF6EE;
+    --color-ivory-200: #F3ECDD;
+
+    /* Ink — couleurs de texte et fonds sombres */
+    --color-ink:       #1A1713;
+    --color-ink-soft:  #2D2824;
+    --color-ink-muted: #6B645B;
+
+    /* Terracotta — couleur d'accent */
+    --color-terracotta-50:  #FBF0EC;
+    --color-terracotta-400: #D97957;
+    --color-terracotta-500: #C4573A;
+    --color-terracotta-600: #A9472D;
+    --color-terracotta-700: #8A3822;
+
+    /* Sand — neutres chauds pour placeholders / fonds produits */
+    --color-sand-100: #F0E9DB;
+    --color-sand-200: #E3D8C1;
+    --color-sand-300: #CBBD9E;
+
+    /* Ombres soignées */
+    --shadow-soft: 0 1px 2px rgba(26,23,19,.04), 0 8px 24px rgba(26,23,19,.06);
+    --shadow-lift: 0 10px 40px -10px rgba(26,23,19,.18);
+}
+
+/* ---------- Styles globaux & composants ---------- */
+@layer base {
+    html, body {
+        font-family: var(--font-sans);
+        background: var(--color-ivory-50);
+        color: var(--color-ink);
+    }
+    .font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+}
+
+@layer components {
+    .btn-primary {
+        @apply inline-flex items-center justify-center bg-ink text-ivory-50 transition-all duration-200;
+    }
+    .btn-primary:hover {
+        @apply bg-terracotta-500 -translate-y-px;
+        box-shadow: 0 10px 30px -10px rgba(196, 87, 58, .5);
+    }
+    .btn-ghost {
+        @apply inline-flex items-center justify-center border border-ink text-ink transition-all duration-200;
+    }
+    .btn-ghost:hover { @apply bg-ink text-ivory-50; }
+
+    /* Reveal au scroll */
+    .reveal {
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Scrollbar discrète */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-sand-200); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-sand-300); }
+
+[x-cloak] { display: none !important; }
+/* [x-cloak] { display: none !important; } */
