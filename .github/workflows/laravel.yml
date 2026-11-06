@@ -1,0 +1,60 @@
+name: Laravel
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'        # adapte à ta version (voir composer.json)
+          extensions: mbstring, pdo, pdo_sqlite, bcmath
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Copier .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Installer les dépendances PHP
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Installer et builder le front
+        run: |
+          npm ci
+          npm run build
+
+      - name: Générer la clé
+        run: php artisan key:generate
+
+      - name: Permissions
+        run: chmod -R 775 storage bootstrap/cache
+
+      - name: Base SQLite de test
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Lancer les tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
