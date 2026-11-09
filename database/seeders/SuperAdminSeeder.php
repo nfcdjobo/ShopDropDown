@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Hash;
  * Les informations de connexion sont lues depuis .env pour ne jamais
  * stocker de credentials en dur dans le code source.
  *
- *  SUPER_ADMIN_EMAIL    = superadmin@shopdropdown.ci
+ *  SUPER_ADMIN_EMAIL    = superadmin@ShopDrop.ci
  *  SUPER_ADMIN_PASSWORD = (votre mot de passe sécurisé)
  *  SUPER_ADMIN_FIRST    = Admin
  *  SUPER_ADMIN_LAST     = Principal
@@ -27,8 +27,8 @@ class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $email     = env('SUPER_ADMIN_EMAIL',    'superadmin@shopdropdown.ci');
-        $password  = env('SUPER_ADMIN_PASSWORD', 'Admin@ShopDropdown2026!');
+        $email     = env('SUPER_ADMIN_EMAIL',    'superadmin@ShopDrop.ci');
+        $password  = env('SUPER_ADMIN_PASSWORD', 'Admin@ShopDrop2026!');
         $firstName = env('SUPER_ADMIN_FIRST',    'Admin');
         $lastName  = env('SUPER_ADMIN_LAST',     'Principal');
 

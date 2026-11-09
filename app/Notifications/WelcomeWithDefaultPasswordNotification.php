@@ -39,7 +39,7 @@ class WelcomeWithDefaultPasswordNotification extends Notification implements Sho
         $loginUrl = url('/login');
 
         return (new MailMessage)
-            ->subject("Bienvenue sur Shop Dropdown — Commande {$this->order->order_number}")
+            ->subject("Bienvenue sur Shop Drop — Commande {$this->order->order_number}")
             ->greeting("Bonjour {$notifiable->first_name},")
             ->line('Merci pour votre commande ! Elle a bien été enregistrée et est en cours de traitement.')
             ->line("**Numéro de commande :** {$this->order->order_number}")
@@ -50,6 +50,6 @@ class WelcomeWithDefaultPasswordNotification extends Notification implements Sho
             ->line("**Mot de passe temporaire :** `{$this->plainPassword}`")
             ->line('⚠️ Pour votre sécurité, il vous sera demandé de changer ce mot de passe dès votre première connexion.')
             ->action('Suivre ma commande', $loginUrl)
-            ->line('À très bientôt sur Shop Dropdown.');
+            ->line('À très bientôt sur Shop Drop.');
     }
 }

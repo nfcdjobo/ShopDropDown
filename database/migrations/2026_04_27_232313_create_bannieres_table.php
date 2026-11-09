@@ -33,14 +33,14 @@ return new class extends Migration
         // ─── Donnée par défaut (ligne unique) ──────────────────────────
         DB::table('bannieres')->insert([
             'id'                                => (string) Str::uuid(),
-            'appelation'                        => 'Shop Dropdown',
+            'appelation'                        => 'Shop Drop',
             'logo'                              => null,
             'slogan'                            => 'Produits soigneusement sélectionnés, livrés rapidement en Côte d\'Ivoire.',
             'telephone_principal'               => '+225 01 40 94 03 30',
             'telephone_secondaire'              => null,
             'frais_livraison_defaut'            => 1000,
             'appliquer_frais_livraison_defaut'  => false,
-            'email'                             => 'hello@shopdropdown.ci',
+            'email'                             => 'hello@ShopDrop.ci',
             'numero_whatsapp'                   => '+225 01 40 94 03 30',
             'lien_whatsapp'                     => 'https://wa.me/+2250140940330',
             'meta_id'                           => '954379014431559',

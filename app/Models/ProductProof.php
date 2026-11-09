@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\ProductMediaStorage;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class ProductProof extends Model
 {
@@ -16,6 +16,7 @@ class ProductProof extends Model
     protected $fillable = [
         'product_id',
         'path',
+        'disk',
         'caption',
         'alt_text',
         'sort_order',
@@ -30,10 +31,11 @@ class ProductProof extends Model
 
     protected static function booted(): void
     {
-        // Nettoyage du fichier physique lors de la suppression de la ligne.
+        // Le fichier physique n'est supprimé qu'à la suppression DÉFINITIVE de la ligne :
+        // une suppression douce reste restaurable avec son image.
         static::deleting(function (ProductProof $proof) {
-            if ($proof->path) {
-                Storage::disk('public')->delete($proof->path);
+            if ($proof->isForceDeleting()) {
+                app(ProductMediaStorage::class)->delete($proof->disk, $proof->path);
             }
         });
     }
@@ -45,6 +47,6 @@ class ProductProof extends Model
 
     public function getUrlAttribute(): ?string
     {
-        return $this->path ? Storage::disk('public')->url($this->path) : null;
+        return app(ProductMediaStorage::class)->url($this->disk, $this->path);
     }
 }

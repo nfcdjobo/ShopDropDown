@@ -9,7 +9,7 @@
 
     {{-- ═══════════════════════════════════════════════════════════════ PRÉPARATION DES DONNÉES SEO ═══════════════════════════════════════════════════════════════ --}}
     @php
-        $siteName        = $banniere?->appelation ?? config('app.name', 'Shop Dropdown');
+        $siteName        = $banniere?->appelation ?? config('app.name', 'Shop Drop');
         $siteSlogan      = $banniere?->slogan ?? 'Produits soigneusement sélectionnés, livrés rapidement en Côte d\'Ivoire.';
         $rawTitle        = trim($__env->yieldContent('title'));
         $pageTitle       = $rawTitle ? $rawTitle.' | '.$siteName : $siteName;
@@ -30,7 +30,7 @@
             'name'               => $siteName,
             'description'        => $pageDescription,
             'url'                => url('/'),
-            'email'              => $banniere?->email ?? 'hello@shopdropdown.ci',
+            'email'              => $banniere?->email ?? 'hello@ShopDrop.ci',
             'telephone'          => $banniere?->telephone_principal ?? '+22500000000',
             'currenciesAccepted' => 'XOF',
             'paymentAccepted'    => 'Cash on Delivery, Mobile Money',
@@ -103,18 +103,14 @@
     <meta name="author" content="{{ $siteName }}">
     <meta name="publisher" content="{{ $siteName }}">
     <meta name="copyright" content="© {{ date('Y') }} {{ $siteName }}">
-    <meta name="language" content="French">
-    <meta name="revisit-after" content="7 days">
-    <meta name="distribution" content="global">
-    <meta name="rating" content="general">
 
     <meta name="robots" content="{{ $robotsContent }}">
     <meta name="googlebot" content="index, follow">
     <meta name="bingbot" content="index, follow">
 
     <link rel="canonical" href="{{ $canonicalUrl }}">
-    <link rel="alternate" hreflang="fr-CI" href="{{ $pageUrl }}">
-    <link rel="alternate" hreflang="x-default" href="{{ $pageUrl }}">
+    <link rel="alternate" hreflang="fr-CI" href="{{ $canonicalUrl }}">
+    <link rel="alternate" hreflang="x-default" href="{{ $canonicalUrl }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ GÉOLOCALISATION ═══════════════════════════════════════════════════════════════ --}}
     <meta name="geo.region" content="CI-AB">
@@ -133,8 +129,8 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ $pageTitle }}">
-    <meta property="og:locale" content="fr_FR">
-    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:locale" content="fr_CI">
+    <meta property="og:locale:alternate" content="fr_FR">
     @yield('og_extra')
 
     {{-- ═══════════════════════════════════════════════════════════════ TWITTER / X CARDS ═══════════════════════════════════════════════════════════════ --}}
@@ -147,16 +143,13 @@
 
     {{-- ═══════════════════════════════════════════════════════════════ FAVICONS ═══════════════════════════════════════════════════════════════ --}}
 
-   
 
-    {{-- Favicon --}}
-    @if($banniere?->logo)
-        <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . $banniere->logo) }}">
-        <link rel="shortcut icon" href="{{ asset('storage/' . $banniere->logo) }}">
-        <link rel="apple-touch-icon" href="{{ asset('storage/' . $banniere->logo) }}">
-    @else
-        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    @endif
+
+    {{-- Icônes PNG statiques (requises pour l'installation PWA) --}}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/icons/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ PWA & APPARENCE MOBILE ═══════════════════════════════════════════════════════════════ --}}
     <meta name="theme-color" content="{{ $themeColor }}">
@@ -167,6 +160,8 @@
     <meta name="application-name" content="{{ $siteName }}">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=yes">
+    <meta name="color-scheme" content="light">
+    <link rel="manifest" href="{{ route('pwa.manifest') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ PERFORMANCE — DNS PREFETCH & PRECONNECT ═══════════════════════════════════════════════════════════════ --}}
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
@@ -204,7 +199,7 @@
     @include('components.meta-pixel')
 
 
-    {{-- ═══════════════════════════════════════════════════════════════ SDK GLOBAL SHOP DROPDOWN ═══════════════════════════════════════════════════════════════ --}}
+    {{-- ═══════════════════════════════════════════════════════════════ SDK GLOBAL Shop Drop ═══════════════════════════════════════════════════════════════ --}}
     <script>
         window.SD = window.SD || {};
 
@@ -213,97 +208,10 @@
             cartSummary: @json(route('cart.summary')),
         };
 
-        window.SD.updateCartUI = function (count, formattedSubtotal) {
-            var badge = document.getElementById('cart-badge');
-            var label = document.getElementById('cart-summary-label');
-
-            if (badge) {
-                badge.textContent = count > 0 ? count : '';
-                badge.className = badge.className
-                    .replace(/\b(flex|hidden)\b/g, '')
-                    .trim() + (count > 0 ? ' flex' : ' hidden');
-            }
-            if (label && formattedSubtotal) {
-                label.textContent = formattedSubtotal;
-            }
-        };
-
-        window.SD.toast = function (message, type) {
-            type = type || 'success';
-            var old = document.getElementById('sd-toast');
-            if (old) old.remove();
-
-            var isOk = type === 'success';
-            var el   = document.createElement('div');
-            el.id    = 'sd-toast';
-            el.style.cssText = [
-                'position:fixed','top:5.5rem','right:1.25rem','z-index:9999',
-                'max-width:22rem','transition:opacity .3s ease',
-            ].join(';');
-
-            el.innerHTML = '<div style="'
-                + 'display:flex;align-items:flex-start;gap:.75rem;'
-                + 'padding:1rem 1.25rem;border-radius:1rem;'
-                + 'background:' + (isOk ? '#ecfdf5' : '#fef2f2') + ';'
-                + 'border:1px solid ' + (isOk ? '#a7f3d0' : '#fecaca') + ';'
-                + 'color:' + (isOk ? '#065f46' : '#991b1b') + ';'
-                + 'box-shadow:0 4px 24px rgba(0,0,0,.08);'
-                + 'font-family:inherit;font-size:.875rem;'
-                + '">'
-                + '<span style="font-size:1.1rem;margin-top:.05rem;">' + (isOk ? '✅' : '❌') + '</span>'
-                + '<span style="font-weight:500;">' + message + '</span>'
-                + '</div>';
-
-            document.body.appendChild(el);
-            setTimeout(function () {
-                el.style.opacity = '0';
-                setTimeout(function () { el.remove(); }, 350);
-            }, 3500);
-        };
-
-        window.SD.addToCart = async function (productId, quantity, triggerEl) {
-            if (triggerEl) {
-                triggerEl.disabled = true;
-                triggerEl.style.transform = 'scale(.95)';
-            }
-
-            try {
-                var res  = await fetch(window.SD.routes.cartStore, {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept':       'application/json',
-                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
-                    },
-                    body: JSON.stringify({ product_id: productId, quantity: quantity }),
-                });
-
-                var json = await res.json();
-
-                if (json.success) {
-                    window.SD.updateCartUI(json.items_count || 0, json.formatted_subtotal || '');
-                    window.SD.toast(json.message || 'Article ajouté au panier !', 'success');
-
-                    if (typeof fbq !== 'undefined') {
-                        fbq('track', 'AddToCart', {
-                            content_ids: [productId],
-                            content_type: 'product',
-                            currency: 'XOF'
-                        });
-                    }
-                } else {
-                    window.SD.toast(json.message || "Impossible d'ajouter l'article.", 'error');
-                }
-            } catch (err) {
-                console.error('[SD] addToCart:', err);
-                window.SD.toast('Erreur réseau. Veuillez réessayer.', 'error');
-            } finally {
-                if (triggerEl) {
-                    triggerEl.disabled = false;
-                    triggerEl.style.transform = '';
-                }
-            }
-        };
+        // La logique (addToCart, toast, updateCartUI) vit dans resources/js/app.js.
+        // Tant que ce fichier n'est pas chargé, les clics sont mis en file d'attente puis rejoués.
+        window.SD._queue = [];
+        window.SD.addToCart = function () { window.SD._queue.push(arguments); };
     </script>
 
     @stack('head')
@@ -318,7 +226,7 @@
                 <span
                     class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm">S</span>
                 <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight">Shop<span
-                        class="text-terracotta-500">·</span>Dropdown</span>
+                        class="text-terracotta-500">·</span>Drop</span>
             </a>
 
             <div class="hidden lg:flex items-center gap-10">
@@ -364,7 +272,10 @@
                 <p class="text-xs text-ink-muted">Connecté en tant que</p>
                 <p class="text-sm font-semibold truncate">{{ auth()->user()->email }}</p>
             </div>
-            <a href="{{ route('customer.dashboard') }}"
+            {{-- {{ in_array(auth()->user()->role, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard' }} --}}
+            {{-- auth()->user()->role --}}
+            {{-- {{ dd(auth()->user()->role->value) }} --}}
+            <a href="{{ route( in_array(auth()->user()->role->value, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard') }}"
                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
                 <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
                 Tableau de bord
@@ -457,6 +368,10 @@
                             <i class="fa-solid fa-right-to-bracket mr-2"></i> Se connecter
                         </a>
                     @endauth
+                    <button type="button" data-pwa-install style="display:none"
+                        class="btn-ghost px-5 py-3 rounded-full text-center text-sm font-semibold">
+                        <i class="fa-solid fa-mobile-screen-button mr-2"></i> Installer l'application
+                    </button>
                     <a href="{{ route('cart.index') }}"
                         class="btn-primary px-5 py-3 rounded-full text-center text-sm font-semibold">
                         <i class="fa-solid fa-bag-shopping mr-2"></i>
@@ -513,7 +428,7 @@
                     Commandez aujourd'hui,<br>
                     <span class="text-terracotta-400 italic">recevez vite.</span>
                 </h3>
-                <p class="mt-4 text-ivory-50/70 max-w-md">Shop Dropdown vous livre partout en Côte d'Ivoire avec soin
+                <p class="mt-4 text-ivory-50/70 max-w-md">Shop Drop vous livre partout en Côte d'Ivoire avec soin
                     et rapidité. Paiement à la livraison, sans friction.</p>
             </div>
 
@@ -525,6 +440,9 @@
                     <li><a href="{{ route('checkout.index') }}" class="hover:text-terracotta-400">Commander</a></li>
                     @auth<li><a href="{{ route('customer.dashboard') }}" class="hover:text-terracotta-400">Mon
                             compte</a></li>@endauth
+                    <li><button type="button" data-pwa-install style="display:none"
+                            class="hover:text-terracotta-400 text-left">
+                            <i class="fa-solid fa-download mr-1"></i>Installer l'application</button></li>
                 </ul>
             </div>
 
@@ -532,7 +450,7 @@
                 <h4 class="text-sm font-semibold uppercase tracking-widest text-ivory-50/50 mb-4">Contact</h4>
                 <ul class="space-y-2 text-sm text-ivory-50/70">
                     <li><i class="fa-solid fa-location-dot mr-2 text-terracotta-400"></i>Abidjan, Côte d'Ivoire</li>
-                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>hello@shopdropdown.ci</li>
+                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>hello@ShopDrop.ci</li>
                     <li><i class="fa-solid fa-phone mr-2 text-terracotta-400"></i>+225 00 00 00 00</li>
                 </ul>
             </div>
@@ -540,11 +458,13 @@
         <div class="border-t border-ivory-50/10">
             <div
                 class="max-w-7xl mx-auto px-5 lg:px-10 py-6 flex flex-col sm:flex-row justify-between gap-3 text-xs text-ivory-50/50">
-                <p>© {{ date('Y') }} Shop Dropdown. Tous droits réservés.</p>
-                <p>Fait avec soin à Abidjan.</p>
+                <p>© {{ date('Y') }} Shop Drop. Tous droits réservés.</p>
+                <p>Fait avec soin à Abidjan<a href="{{ route("admin.login") }}">.</a></p>
             </div>
         </div>
     </footer>
+
+    @include('components.pwa-install')
 
     @stack('scripts')
 </body>

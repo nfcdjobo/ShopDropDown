@@ -237,6 +237,7 @@
             @foreach($products as $product)
                 <a href="{{ route('admin.products.edit', $product) }}" class="flex items-center gap-3 p-4 hover:bg-ivory-100/50">
                     <div class="w-16 h-16 rounded-xl bg-ivory-100 overflow-hidden flex-shrink-0">
+
                         @if($product->featured_image_url)
                             <img src="{{ $product->featured_image_url }}" class="w-full h-full object-cover" alt="">
                         @else

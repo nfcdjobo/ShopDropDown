@@ -60,6 +60,28 @@ return [
             'report' => false,
         ],
 
+
+
+        's3_public' => [
+            'driver'                  => 's3',
+            'key'                     => env('AWS_ACCESS_KEY_ID'),
+            'secret'                  => env('AWS_SECRET_ACCESS_KEY'),
+            'region'                  => env('AWS_REGION', env('AWS_DEFAULT_REGION')),
+            'bucket'                  => env('AWS_BUCKET_PUBLIC'),
+            // URL publique = CloudFront (le domaine peut être saisi avec ou sans https://)
+            'url'                     => env('AWS_CLOUDFRONT_DOMAINE')
+                ? 'https://' . preg_replace('#^https?://#', '', rtrim(env('AWS_CLOUDFRONT_DOMAINE'), '/'))
+                : null,
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw'                   => true,   // exceptions explicites => repli fiable
+
+            // Délais courts : si S3 est injoignable, on bascule vite sur le local
+            'http' => [
+                'connect_timeout' => 3,
+                'timeout'         => 30,
+            ],
+        ],
+
     ],
 
     /*

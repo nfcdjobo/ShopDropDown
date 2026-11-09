@@ -1,0 +1,56 @@
+services:
+
+  web:
+    build: .
+    container_name: shopdropdown_app
+    restart: unless-stopped
+    expose:
+      - "80"                          # Plus de ports: → Traefik s'en charge
+    env_file:
+      - .env
+    volumes:
+      - shopdropdown_storage:/var/www/app/storage/app
+      - shopdropdown_logs:/var/log
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shopdropdown.rule=Host(`shopdropdown.barriservices.com`)"
+      - "traefik.http.routers.shopdropdown.entrypoints=websecure"
+      - "traefik.http.routers.shopdropdown.tls.certresolver=letsencrypt"
+      - "traefik.http.services.shopdropdown.loadbalancer.server.port=80"
+    networks:
+      - shopdropdown_net
+      - traefik_net               # Rejoindre le réseau de Traefik
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    container_name: shopdropdown_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: geasamwa_shopdropdown5fji858derr
+      POSTGRES_USER: geasamwa_shopdropdown9858ojiu55
+      POSTGRES_PASSWORD: 4Y])WhI5K3@j
+    volumes:
+      - shopdropdown_pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geasamwa_shopdropdown9858ojiu55 -d geasamwa_shopdropdown5fji858derr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopdropdown_net
+
+volumes:
+  shopdropdown_pgdata:
+  shopdropdown_storage:
+  shopdropdown_logs:
+
+networks:
+  shopdropdown_net:
+    driver: bridge
+  traefik_net:
+    external: true                # Réseau existant de Traefik
+

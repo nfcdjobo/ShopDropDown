@@ -51,7 +51,7 @@
                             <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted text-sm"></i>
                             <input type="email" name="email" id="email" required
                                    value="{{ old('email') }}"
-                                   placeholder="exemple@shopdropdown.ci"
+                                   placeholder="exemple@ShopDrop.ci"
                                    class="w-full pl-11 pr-4 h-11 rounded-xl bg-ivory-100 border border-transparent focus:border-terracotta-500 focus:bg-white focus:ring-2 focus:ring-terracotta-500/20 outline-none transition text-sm">
                         </div>
                         @error('email')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror

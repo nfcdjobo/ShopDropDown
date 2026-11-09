@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Administration') — {{ $banniere?->appelation ?? config('app.name', 'Shop Dropdown') }}</title>
+    <title>@yield('title', 'Administration') — {{ $banniere?->appelation ?? config('app.name', 'Shop Drop') }}</title>
 
     {{-- Favicon --}}
     @if($banniere?->logo)
@@ -46,14 +46,7 @@
 
     {{-- =============== SIDEBAR DESKTOP =============== --}}
     <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 xl:w-72 bg-ink text-ivory-50 flex-col z-30">
-        {{-- Logo --}}
-        {{-- <div class="h-20 px-6 flex items-center gap-3 border-b border-ivory-50/10">
-            <span class="w-9 h-9 rounded-full bg-terracotta-500 text-white flex items-center justify-center font-display font-bold">S</span>
-            <div>
-                <p class="font-display text-lg font-semibold leading-tight">Shop<span class="text-terracotta-500">·</span>Dropdown</p>
-                <p class="text-[10px] uppercase tracking-widest text-ivory-50/50 font-semibold">Administration</p>
-            </div>
-        </div> --}}
+
         <div class="h-20 px-6 flex items-center gap-3 border-b border-ivory-50/10">
             @if($banniere?->logo)
                 <img src="{{ asset('storage/' . $banniere->logo) }}" class="w-9 h-9 rounded-full object-cover" alt="">
@@ -116,7 +109,7 @@
             <div class="h-16 px-5 flex items-center justify-between border-b border-ivory-50/10">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-terracotta-500 text-white flex items-center justify-center font-display font-bold text-sm">S</span>
-                    <span class="font-display text-lg font-semibold">Shop<span class="text-terracotta-500">·</span>Dropdown</span>
+                    <span class="font-display text-lg font-semibold">Shop<span class="text-terracotta-500">·</span>DropDown</span>
                 </div>
                 <button @click="sidebar = false" class="w-9 h-9 rounded-full hover:bg-ivory-50/10 flex items-center justify-center" aria-label="Fermer">
                     <i class="fa-solid fa-xmark"></i>
@@ -251,7 +244,7 @@
 
         <footer class="px-4 sm:px-6 lg:px-10 py-6 text-xs text-ink-muted border-t border-ink/5">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
-                <span>© {{ date('Y') }} Shop Dropdown. Tous droits réservés.</span>
+                <span>© {{ date('Y') }} Shop Drop. Tous droits réservés.</span>
                 <span>v1.0 · Administration</span>
             </div>
         </footer>

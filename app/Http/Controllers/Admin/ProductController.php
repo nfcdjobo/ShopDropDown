@@ -10,12 +10,13 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductProof;
+use App\Services\ProductMediaStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Throwable;
 
@@ -29,9 +30,10 @@ use Throwable;
  */
 class ProductController extends Controller
 {
-    private const IMAGE_DISK = 'public';
-    private const IMAGE_DIR  = 'products';
-    private const PROOF_DIR  = 'products/proofs';
+    /** Disque des fichiers enregistrés avant l'introduction de la colonne `disk`. */
+    private const LEGACY_DISK = 'public';
+
+    public function __construct(private readonly ProductMediaStorage $media) {}
 
     /**
      * Champs présents dans le formulaire mais qui ne doivent jamais être passés
@@ -85,7 +87,7 @@ class ProductController extends Controller
                 'inactive'  => $query->where('is_active', false),
                 'featured'  => $query->featured(),
                 'low_stock' => $query->where('track_stock', true)
-                                     ->whereColumn('stock', '<=', 'low_stock_threshold'),
+                    ->whereColumn('stock', '<=', 'low_stock_threshold'),
                 default     => null,
             };
 
@@ -135,18 +137,24 @@ class ProductController extends Controller
             $data['type'] = Product::TYPE_SIMPLE;
         }
 
-        $uploadedPaths = []; // Fichiers à supprimer si rollback
+        unset($data['featured_image']); // traité séparément (fichier)
+
+        $uploadedPaths = []; // Fichiers à supprimer si rollback : [['disk' => , 'path' => ], …]
 
         DB::beginTransaction();
 
         try {
-            if ($featured = $request->file('featured_image')) {
-                $path = $featured->store(self::IMAGE_DIR, self::IMAGE_DISK);
-                $uploadedPaths[] = $path;
-                $data['featured_image'] = $path;
-            }
-
+            // Le produit est créé d'abord : son ID sert de nom de dossier de stockage.
             $product = Product::create($data);
+
+            if ($featured = $request->file('featured_image')) {
+                $stored = $this->media->store($featured, $product->id, ProductMediaStorage::FEATURED);
+                $uploadedPaths[] = $stored;
+                $product->update([
+                    'featured_image'      => $stored['path'],
+                    'featured_image_disk' => $stored['disk'],
+                ]);
+            }
 
             $galleryPaths  = $this->syncGalleryImages($product, $request->file('gallery', []));
             $uploadedPaths = array_merge($uploadedPaths, $galleryPaths);
@@ -223,6 +231,8 @@ class ProductController extends Controller
             unset($data['type']);
         }
 
+        unset($data['featured_image']); // remplacé plus bas si un nouveau fichier est envoyé
+
         $uploadedPaths  = []; // Nouveaux fichiers — à supprimer si rollback
         $pendingDeletes = []; // Anciens fichiers — à supprimer seulement si commit réussi
 
@@ -231,19 +241,23 @@ class ProductController extends Controller
         try {
             if ($featured = $request->file('featured_image')) {
                 if ($product->featured_image) {
-                    $pendingDeletes[] = $product->featured_image;
+                    $pendingDeletes[] = $this->fileRef($product->featured_image_disk, $product->featured_image);
                 }
-                $path = $featured->store(self::IMAGE_DIR, self::IMAGE_DISK);
-                $uploadedPaths[] = $path;
-                $data['featured_image'] = $path;
+                $stored = $this->media->store($featured, $product->id, ProductMediaStorage::FEATURED);
+                $uploadedPaths[] = $stored;
+                $data['featured_image']      = $stored['path'];
+                $data['featured_image_disk'] = $stored['disk'];
             }
 
             $product->update($data);
 
             // ─── Galerie ─────────────────────────────────────────────────
+            // Lignes supprimées dans la transaction ; fichiers supprimés seulement après commit.
             if ($idsToDelete = $request->input('delete_images', [])) {
-                $product->images()->whereIn('id', $idsToDelete)->get()
-                    ->each->delete();
+                $pendingDeletes = array_merge(
+                    $pendingDeletes,
+                    $this->deleteRowsKeepingFiles($product->images(), (array) $idsToDelete)
+                );
             }
 
             $galleryPaths  = $this->syncGalleryImages($product, $request->file('gallery', []));
@@ -251,8 +265,10 @@ class ProductController extends Controller
 
             // ─── Preuves visuelles ───────────────────────────────────────
             if ($proofIdsToDelete = $request->input('delete_proofs', [])) {
-                $product->proofs()->whereIn('id', $proofIdsToDelete)->get()
-                    ->each->delete();
+                $pendingDeletes = array_merge(
+                    $pendingDeletes,
+                    $this->deleteRowsKeepingFiles($product->proofs(), (array) $proofIdsToDelete)
+                );
             }
 
             $this->updateExistingProofs(
@@ -278,7 +294,7 @@ class ProductController extends Controller
                 ->with('success', 'Produit mis à jour.');
         } catch (Throwable $e) {
             DB::rollBack();
-
+            // dd($e->getMessage());
             $this->cleanupUploadedFiles($uploadedPaths);
 
             Log::error('Erreur mise à jour produit', [
@@ -331,12 +347,14 @@ class ProductController extends Controller
     {
         abort_unless($product->isPackage(), 404, 'Seul un package peut recevoir des sous-produits.');
 
-        if ($request->input('package_role') === Product::ROLE_PRINCIPAL
-            && $product->principalItem()->exists()) {
+        if (
+            $request->input('package_role') === Product::ROLE_PRINCIPAL
+            && $product->principalItem()->exists()
+        ) {
             return back()->with('error', 'Ce package a déjà un produit principal.');
         }
 
-        $data = $request->safe()->except(['gallery']);
+        $data = $request->safe()->except(['gallery', 'featured_image']);
         $data['type']               = Product::TYPE_ITEM;
         $data['parent_id']          = $product->id;
         $data['category_id']        = $product->category_id;
@@ -351,13 +369,17 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
-            if ($featured = $request->file('featured_image')) {
-                $path = $featured->store(self::IMAGE_DIR, self::IMAGE_DISK);
-                $uploadedPaths[] = $path;
-                $data['featured_image'] = $path;
-            }
-
+            // Le sous-produit est créé d'abord : son ID sert de nom de dossier de stockage.
             $item = Product::create($data);
+
+            if ($featured = $request->file('featured_image')) {
+                $stored = $this->media->store($featured, $item->id, ProductMediaStorage::FEATURED);
+                $uploadedPaths[] = $stored;
+                $item->update([
+                    'featured_image'      => $stored['path'],
+                    'featured_image_disk' => $stored['disk'],
+                ]);
+            }
 
             $galleryPaths  = $this->syncGalleryImages($item, $request->file('gallery', []));
             $uploadedPaths = array_merge($uploadedPaths, $galleryPaths);
@@ -399,17 +421,21 @@ class ProductController extends Controller
             // On garde une trace des fichiers à supprimer après commit
             $filesToDelete = [];
             if ($item->featured_image) {
-                $filesToDelete[] = $item->featured_image;
+                $filesToDelete[] = $this->fileRef($item->featured_image_disk, $item->featured_image);
             }
 
-            foreach ($item->images as $img) {
-                $img->delete(); // ProductImage gère son propre fichier
-            }
+            // Suppression de masse (sans événements de modèle) : les fichiers des images
+            // ne sont supprimés qu'après le commit, avec celui du featured_image.
+            $filesToDelete = array_merge(
+                $filesToDelete,
+                $this->fileRefsFrom($item->images()->getQuery())
+            );
+            $item->images()->forceDelete();
             $item->forceDelete();
 
             DB::commit();
 
-            // Suppression physique du featured_image après commit
+            // Suppression physique des fichiers après commit
             $this->cleanupUploadedFiles($filesToDelete);
 
             return back()->with('success', 'Sous-produit retiré.');
@@ -438,7 +464,7 @@ class ProductController extends Controller
      * paths créés (utile pour cleanup en cas de rollback).
      *
      * @param  array<int, UploadedFile|null>  $files
-     * @return array<int, string>
+     * @return array<int, array{disk: string, path: string}>
      */
     private function syncGalleryImages(Product $product, array $files): array
     {
@@ -454,12 +480,13 @@ class ProductController extends Controller
                 continue;
             }
 
-            $path = $file->store(self::IMAGE_DIR . '/gallery', self::IMAGE_DISK);
-            $uploadedPaths[] = $path;
+            $stored = $this->media->store($file, $product->id, ProductMediaStorage::GALLERY);
+            $uploadedPaths[] = $stored;
 
             ProductImage::create([
                 'product_id' => $product->id,
-                'path'       => $path,
+                'path'       => $stored['path'],
+                'disk'       => $stored['disk'],
                 'sort_order' => $startOrder + $i,
             ]);
         }
@@ -480,7 +507,7 @@ class ProductController extends Controller
      * @param  array<int, UploadedFile|null>  $files
      * @param  array<int, string|null>        $captions
      * @param  array<int, string|null>        $altTexts
-     * @return array<int, string>  Paths uploadés (pour rollback éventuel)
+     * @return array<int, array{disk: string, path: string}>  Fichiers uploadés (pour rollback éventuel)
      */
     private function syncProofs(
         Product $product,
@@ -500,12 +527,13 @@ class ProductController extends Controller
                 continue;
             }
 
-            $path = $file->store(self::PROOF_DIR, self::IMAGE_DISK);
-            $uploadedPaths[] = $path;
+            $stored = $this->media->store($file, $product->id, ProductMediaStorage::PROOFS);
+            $uploadedPaths[] = $stored;
 
             ProductProof::create([
                 'product_id' => $product->id,
-                'path'       => $path,
+                'path'       => $stored['path'],
+                'disk'       => $stored['disk'],
                 'caption'    => $captions[$i] ?? null,
                 'alt_text'   => $altTexts[$i] ?? null,
                 'sort_order' => $startOrder + $i,
@@ -574,26 +602,61 @@ class ProductController extends Controller
     */
 
     /**
+     * Supprime des lignes (galerie, preuves…) SANS toucher aux fichiers, et retourne
+     * leurs chemins pour une suppression physique après le commit.
+     *
+     * Suppression de masse : les événements de modèle (qui effaceraient le fichier
+     * immédiatement) ne sont volontairement pas déclenchés. Ainsi, en cas de rollback,
+     * les lignes reviennent ET leurs fichiers existent toujours.
+     *
+     * Suppression définitive (forceDelete) : ProductImage / ProductProof utilisent SoftDeletes.
+     *
+     * @param  array<int, string>  $ids
+     * @return array<int, string>
+     */
+    private function deleteRowsKeepingFiles(Relation $relation, array $ids): array
+    {
+        $query = $relation->getQuery()->whereIn('id', $ids);
+
+        $files = $this->fileRefsFrom(clone $query);
+
+        // Les modèles utilisent SoftDeletes : on supprime définitivement, car les fichiers
+        // correspondants sont effacés après le commit (une ligne restaurée n'aurait plus d'image).
+        $query->forceDelete();
+
+        return $files;
+    }
+
+    /**
+     * Références {disk, path} de toutes les lignes d'une requête (galerie, preuves).
+     *
+     * @return array<int, array{disk: string, path: string}>
+     */
+    private function fileRefsFrom($query): array
+    {
+        return $query->get(['disk', 'path'])
+            ->filter(fn($row) => filled($row->path))
+            ->map(fn($row) => $this->fileRef($row->disk, $row->path))
+            ->values()
+            ->all();
+    }
+
+    /** @return array{disk: string, path: string} */
+    private function fileRef(?string $disk, string $path): array
+    {
+        return ['disk' => $disk ?: self::LEGACY_DISK, 'path' => $path];
+    }
+
+    /**
      * Supprime les fichiers du disque, en silenciant les erreurs individuelles
      * (un fichier déjà absent ne doit pas casser le flux).
      *
-     * @param  array<int, string>  $paths
+     * @param  array<int, array{disk: string, path: string}>  $files
      */
-    private function cleanupUploadedFiles(array $paths): void
+    private function cleanupUploadedFiles(array $files): void
     {
-        foreach ($paths as $path) {
-            if (!$path) {
-                continue;
-            }
-
-            try {
-                Storage::disk(self::IMAGE_DISK)->delete($path);
-            } catch (Throwable $e) {
-                Log::warning("Impossible de supprimer le fichier orphelin", [
-                    'path'  => $path,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+        foreach ($files as $file) {
+            $this->media->delete($file['disk'] ?? null, $file['path'] ?? null);
         }
     }
 

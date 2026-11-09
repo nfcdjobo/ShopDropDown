@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Commande ' . $order->order_number . ' — Shop Dropdown')
+@section('title', 'Commande ' . $order->order_number . ' — Shop Drop')
 
 @php
 $orderSuccess = session('order_success'); // array{order_number, is_new_user, password_emailed}

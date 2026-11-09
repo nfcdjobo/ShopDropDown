@@ -60,7 +60,7 @@
                                 <div class="flex items-center gap-3">
                                     <div class="w-11 h-11 rounded-xl bg-ivory-100 overflow-hidden flex-shrink-0">
                                         @if($category->image)
-                                            <img src="{{ \Storage::disk('public')->url($category->image) }}" alt="" class="w-full h-full object-cover">
+                                            <img src="{{ Storage::url($category->image) }}" alt="" class="w-full h-full object-cover">
                                         @else
                                             <div class="w-full h-full flex items-center justify-center text-ink-muted">
                                                 <i class="fa-solid fa-layer-group text-sm"></i>

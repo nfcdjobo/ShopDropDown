@@ -26,12 +26,13 @@ class Banniere extends Model
         'email',
         'numero_whatsapp',
         'lien_whatsapp',
-        'meta_id',
+        'meta_pixel_ids',
     ];
 
     protected $casts = [
         'frais_livraison_defaut' => 'integer',
         'appliquer_frais_livraison_defaut' => 'boolean',
+        'meta_pixel_ids' => 'array',
     ];
 
     /**
@@ -53,8 +54,11 @@ class Banniere extends Model
             );
         });
 
-        // Vider le cache après toute mise à jour.
-        static::saved(fn () => Cache::forget('banniere.instance'));
+        // Vider les caches après toute mise à jour.
+        static::saved(function () {
+            Cache::forget('banniere.instance');
+            Cache::forget('pwa.manifest'); // manifeste PWA (nom, slogan)
+        });
     }
 
     /**

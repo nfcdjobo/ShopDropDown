@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mon espace — Shop Dropdown')
+@section('title', 'Mon espace — Shop Drop')
 
 @php
 /**

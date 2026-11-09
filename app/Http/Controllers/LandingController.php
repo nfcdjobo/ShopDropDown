@@ -3,41 +3,131 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Cart\GetOrCreateCartAction;
+use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class LandingController extends Controller
 {
-    /**
-     * Landing page : affiche le(s) produit(s) mis en avant.
-     */
-    public function index(Request $request, GetOrCreateCartAction $getCart): View
-    {
-        $cart = $getCart->handle($request)->load('items.product');
+    /** Nombre de produits chargés à chaque « Voir plus ». */
+    private const PER_PAGE = 15;
 
-        $featuredProducts = Product::query()
-            ->active()
-            ->inStock()
-            ->sellable()
-            ->with(['images', 'category'])
-            ->latest()
-            ->take(8)
+    /** Sélections disponibles via ?selection=… (clé => libellé). */
+    private const SELECTIONS = [
+        'promos'     => 'Offres du moment',
+        'nouveautes' => 'Nouveautés',
+        'favoris'    => 'Coups de cœur',
+    ];
+
+    /**
+     * Accueil façon marketplace : recherche, catégories, carrousel, bandes de produits
+     * (offres, nouveautés, coups de cœur) puis catalogue paginé.
+     *
+     * Paramètres d'URL (tous optionnels) :
+     *   ?q=…            recherche dans le nom et la description courte
+     *   ?categorie=ID   filtre par catégorie
+     *   ?selection=…    promos | nouveautes | favoris
+     *
+     * Dès qu'un filtre est actif, la page affiche uniquement les résultats (et n'est
+     * pas indexée). Requête JSON/AJAX (« Voir plus ») : renvoie seulement les cartes suivantes.
+     */
+    public function index(Request $request, GetOrCreateCartAction $getCart): View|JsonResponse
+    {
+        // ─── Filtres (entrées normalisées : jamais de tableau ni de texte démesuré) ───
+        $q = is_string($request->query('q')) ? trim(Str::limit($request->query('q'), 100, '')) : '';
+
+        $selectionInput = $request->query('selection');
+        $selection = is_string($selectionInput) && array_key_exists($selectionInput, self::SELECTIONS)
+            ? $selectionInput
+            : null;
+
+        // Catégories contenant au moins un produit publié
+        $categories = Category::query()
+            ->whereIn('id', Product::query()->active()->sellable()->whereNotNull('category_id')->select('category_id'))
+            ->orderBy('name')
             ->get();
 
-        $heroProduct = $featuredProducts->first() ?? Product::query()
+        $categoryInput  = $request->query('categorie');
+        $activeCategory = is_string($categoryInput) ? $categories->firstWhere('id', $categoryInput) : null;
+
+        $isFiltered = $q !== '' || $activeCategory !== null || $selection !== null;
+
+        // ─── Catalogue paginé ───
+        $products = Product::query()
             ->active()
-            ->inStock()
             ->sellable()
-            ->with('images')
+            ->with(['images', 'category'])
+            ->when($q !== '', function (Builder $query) use ($q) {
+                $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($q)) . '%';
+
+                $query->where(fn (Builder $w) => $w
+                    ->whereRaw('LOWER(name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(short_description) LIKE ?', [$like]));
+            })
+            ->when($activeCategory, fn (Builder $query) => $query->where('category_id', $activeCategory->id))
+            ->when($selection, fn (Builder $query) => $this->applySelection($query, $selection))
+            ->orderInStockFirst()
             ->latest()
-            ->first();
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'html'  => view('landing.partials.product-cards', [
+                    'products' => $products,
+                    'animate'  => false,
+                ])->render(),
+                'next'  => $products->nextPageUrl(),
+                'total' => $products->total(),
+            ]);
+        }
+
+        $cart = $getCart->handle($request)->load('items.product');
+
+        // ─── Bandes de la page d'accueil (inutiles quand on filtre) ───
+        $heroProducts = $deals = $newArrivals = $favorites = collect();
+
+        if (! $isFiltered) {
+            $available = fn (): Builder => Product::query()
+                ->active()->inStock()->sellable()
+                ->with(['images', 'category']);
+
+            $heroProducts = $available()->orderByDesc('is_featured')->latest()->take(4)->get();
+            $deals        = $this->applySelection($available(), 'promos')->latest()->take(12)->get();
+            $newArrivals  = $this->applySelection($available(), 'nouveautes')->latest()->take(12)->get();
+            $favorites    = $this->applySelection($available(), 'favoris')->latest()->take(12)->get();
+        }
 
         return view('landing.index', [
-            'cart'             => $cart,
-            'heroProduct'      => $heroProduct,
-            'featuredProducts' => $featuredProducts,
+            'cart'           => $cart,
+            'products'       => $products,
+            'categories'     => $categories,
+            'activeCategory' => $activeCategory,
+            'q'              => $q,
+            'selection'      => $selection,
+            'selectionLabel' => $selection ? self::SELECTIONS[$selection] : null,
+            'isFiltered'     => $isFiltered,
+            'heroProducts'   => $heroProducts,
+            'deals'          => $deals,
+            'newArrivals'    => $newArrivals,
+            'favorites'      => $favorites,
         ]);
+    }
+
+    /**
+     * Applique une sélection éditoriale à une requête de produits.
+     */
+    private function applySelection(Builder $query, string $selection): Builder
+    {
+        return match ($selection) {
+            'promos'     => $query->whereNotNull('compare_price')->whereColumn('compare_price', '>', 'price'),
+            'nouveautes' => $query->where('created_at', '>=', now()->subDays(30)),
+            'favoris'    => $query->where('is_featured', true),
+        };
     }
 
     /**

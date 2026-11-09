@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ProductMediaStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -54,6 +55,7 @@ class Product extends Model
         'short_description',
         'description',
         'featured_image',
+        'featured_image_disk',
         'video_url',
         'price',
         'compare_price',
@@ -343,12 +345,17 @@ class Product extends Model
     |--------------------------------------------------------------------------
     */
 
+    // public function getFeaturedImageUrlAttribute(): ?string
+    // {
+    //     return $this->featured_image
+    //         ? Storage::url($this->featured_image)
+    //         : null;
+    // }
+
     public function getFeaturedImageUrlAttribute(): ?string
-    {
-        return $this->featured_image
-            ? Storage::disk('public')->url($this->featured_image)
-            : null;
-    }
+{
+    return app(ProductMediaStorage::class)->url($this->featured_image_disk, $this->featured_image);
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -510,5 +517,23 @@ class Product extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+
+
+
+    /**
+     * Classe les produits disponibles avant les ruptures.
+     * Miroir exact de scopeInStock() : disponible = stock non suivi OU stock > 0.
+     */
+    public function scopeOrderInStockFirst(Builder $query): Builder
+    {
+        return $query->orderByRaw('CASE WHEN track_stock = ? OR stock > 0 THEN 0 ELSE 1 END', [false]);
+    }
+
+    /** Vrai si le produit est en rupture (miroir de scopeInStock). */
+    public function getIsSoldOutAttribute(): bool
+    {
+        return $this->track_stock && ! ($this->stock > 0);
     }
 }

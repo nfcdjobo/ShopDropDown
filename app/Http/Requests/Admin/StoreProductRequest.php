@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\Concerns\ProductImageRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
+    use ProductImageRules;
+
     public function authorize(): bool
     {
         return $this->user()?->isAdmin() ?? false;
@@ -46,15 +49,15 @@ class StoreProductRequest extends FormRequest
             'rating_value'        => ['nullable', 'numeric', 'min:0'],
             'rating_count'        => ['nullable', 'integer', 'min:0'],
 
-            'featured_image'      => ['nullable', 'image', 'max:4096'],
+            'featured_image'      => ['nullable', ...$this->imageFileRules()],
 
             // ─── Galerie produit ─────────────────────────────────────────
             'gallery'             => ['nullable', 'array', 'max:10'],
-            'gallery.*'           => ['image', 'max:4096'],
+            'gallery.*'           => $this->imageFileRules(),
 
             // ─── Preuves visuelles (captures de résultats) ───────────────
             'proofs'              => ['nullable', 'array', 'max:10'],
-            'proofs.*'            => ['image', 'max:4096'],
+            'proofs.*'            => $this->imageFileRules(),
             'proof_captions'      => ['nullable', 'array'],
             'proof_captions.*'    => ['nullable', 'string', 'max:200'],
             'proof_alt_texts'     => ['nullable', 'array'],
@@ -65,9 +68,9 @@ class StoreProductRequest extends FormRequest
 
     public function messages(): array
     {
-        return [
+        return array_merge($this->imageMessages(), [
             'availability_max_days.gte' => 'Le délai maximum doit être supérieur ou égal au délai minimum.',
-        ];
+        ]);
     }
 
     protected function prepareForValidation(): void

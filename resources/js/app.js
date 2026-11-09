@@ -19,63 +19,147 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 });
 
-/* ------------------------------------------------------------------
- | Helpers AJAX panier — exposés globalement via window.SD
+/* ---- SDK ---------------------------------------------------------
+ | Kit panier global : window.SD
+ |
+ | • Le layout (layouts/app.blade.php) ne fournit que la CONFIGURATION :
+ |     window.SD.routes = { cartStore, cartSummary }
+ |   et une file d'attente qui mémorise les clics arrivés avant le chargement de ce fichier.
+ | • TOUTE la logique vit ici.
+ | • window.SD n'est JAMAIS réaffecté (window.SD = {...}) : on le complète uniquement,
+ |   sinon `routes` serait effacé (erreur « reading 'cartStore' »).
  * ------------------------------------------------------------------*/
-window.SD = {
-    csrf: () => document.querySelector('meta[name="csrf-token"]').content,
+const SD = (window.SD = window.SD || {});
 
-    async addToCart(productId, quantity = 1, btn = null) {
-        const labelBackup = btn?.innerHTML;
-        if (btn) { btn.disabled = true; btn.innerHTML = 'Ajout…'; }
+SD.csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
-        try {
-            const res = await fetch(window.SD.routes.cartStore, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': window.SD.csrf(),
-                },
-                body: JSON.stringify({ product_id: productId, quantity }),
-            });
+/** Met à jour le badge et le montant du panier dans l'en-tête. */
+SD.updateCartUI = (count, formattedSubtotal) => {
+    const badge = document.getElementById('cart-badge');
+    const label = document.getElementById('cart-summary-label');
+    const has   = Number(count) > 0;
 
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.message || 'Erreur');
-
-            // MAJ compteur et montant du header
-            const label = document.getElementById('cart-summary-label');
-            const badge = document.getElementById('cart-badge');
-            if (label) label.textContent = data.formatted_subtotal;
-            if (badge) {
-                badge.textContent = data.items_count;
-                badge.classList.toggle('hidden', !data.items_count);
-                badge.classList.toggle('flex',   !!data.items_count);
-            }
-
-            window.SD.toast(data.message || 'Produit ajouté au panier', 'success');
-        } catch (e) {
-            window.SD.toast(e.message, 'error');
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = labelBackup; }
-        }
-    },
-
-    toast(msg, type = 'success') {
-        const iconMap = {
-            success: '<i class="fa-solid fa-circle-check mr-2"></i>',
-            error:   '<i class="fa-solid fa-triangle-exclamation mr-2"></i>',
-        };
-        const colorMap = {
-            success: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-            error:   'bg-red-50 border-red-200 text-red-900',
-        };
-        const el = document.createElement('div');
-        el.className = `fixed top-24 right-5 z-[60] max-w-sm rounded-2xl shadow-lg px-5 py-4 text-sm font-medium border flex items-center transition-all duration-300 opacity-0 translate-y-2 ${colorMap[type] || ''}`;
-        el.innerHTML = (iconMap[type] || '') + msg;
-        document.body.appendChild(el);
-        requestAnimationFrame(() => { el.classList.remove('opacity-0', 'translate-y-2'); });
-        setTimeout(() => { el.classList.add('opacity-0'); setTimeout(() => el.remove(), 300); }, 3500);
-    },
+    if (badge) {
+        badge.textContent = has ? count : '';
+        badge.classList.toggle('hidden', !has);
+        badge.classList.toggle('flex', has);
+    }
+    if (label && formattedSubtotal) {
+        label.textContent = formattedSubtotal;
+    }
 };
+
+/** Notification éphémère (styles en ligne : indépendante de Tailwind). Message affiché en texte brut. */
+SD.toast = (message, type = 'success') => {
+    document.getElementById('sd-toast')?.remove();
+
+    const ok = type === 'success';
+
+    const wrap = document.createElement('div');
+    wrap.id = 'sd-toast';
+    wrap.setAttribute('role', 'status');
+    wrap.style.cssText = 'position:fixed;top:5.5rem;right:1.25rem;z-index:9999;max-width:22rem;transition:opacity .3s ease';
+
+    const box = document.createElement('div');
+    box.style.cssText = [
+        'display:flex', 'align-items:flex-start', 'gap:.75rem',
+        'padding:1rem 1.25rem', 'border-radius:1rem',
+        `background:${ok ? '#ecfdf5' : '#fef2f2'}`,
+        `border:1px solid ${ok ? '#a7f3d0' : '#fecaca'}`,
+        `color:${ok ? '#065f46' : '#991b1b'}`,
+        'box-shadow:0 4px 24px rgba(0,0,0,.08)',
+        'font-family:inherit', 'font-size:.875rem',
+    ].join(';');
+
+    const icon = document.createElement('span');
+    icon.style.cssText = 'font-size:1.1rem;margin-top:.05rem';
+    icon.textContent = ok ? '✅' : '❌';
+
+    const text = document.createElement('span');
+    text.style.fontWeight = '500';
+    text.textContent = message;          // textContent : jamais d'HTML injecté
+
+    box.append(icon, text);
+    wrap.append(box);
+    document.body.appendChild(wrap);
+
+    setTimeout(() => {
+        wrap.style.opacity = '0';
+        setTimeout(() => wrap.remove(), 350);
+    }, 3500);
+};
+
+/**
+ * Ajoute un produit au panier.
+ * @param {string}           productId
+ * @param {number}           quantity
+ * @param {HTMLElement|null} triggerEl  bouton cliqué (désactivé + spinner pendant l'appel)
+ */
+SD.addToCart = async (productId, quantity = 1, triggerEl = null) => {
+    if (triggerEl?.disabled) return;                  // évite le double clic
+
+    const url = SD.routes?.cartStore;
+    if (!url) {
+        console.error('[SD] window.SD.routes.cartStore est introuvable : vérifiez le script du layout.');
+        SD.toast("Le panier est momentanément indisponible. Rechargez la page.", 'error');
+        return;
+    }
+
+    const original = triggerEl?.innerHTML;
+    if (triggerEl) {
+        const hasText = triggerEl.textContent.trim().length > 0;
+        triggerEl.disabled = true;
+        triggerEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>' + (hasText ? ' Ajout…' : '');
+    }
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': SD.csrf(),
+            },
+            body: JSON.stringify({ product_id: productId, quantity }),
+        });
+
+        if (res.status === 419) {
+            throw new Error('Votre session a expiré. Rechargez la page puis réessayez.');
+        }
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || !json.success) {
+            throw new Error(json.message || "Impossible d'ajouter l'article.");
+        }
+
+        SD.updateCartUI(json.items_count || 0, json.formatted_subtotal || '');
+        SD.toast(json.message || 'Article ajouté au panier !', 'success');
+
+        // Meta Pixel : fbq('track') est envoyé à TOUS les pixels initialisés
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'AddToCart', {
+                content_ids: [productId],
+                content_type: 'product',
+                contents: [{ id: productId, quantity }],
+                currency: 'XOF',
+            });
+        }
+    } catch (err) {
+        console.error('[SD] addToCart :', err);
+        const offline = err instanceof TypeError;       // fetch rejette en TypeError si le réseau est coupé
+        SD.toast(offline ? 'Erreur réseau. Veuillez réessayer.' : err.message, 'error');
+    } finally {
+        if (triggerEl) {
+            triggerEl.disabled = false;
+            triggerEl.innerHTML = original;
+        }
+    }
+};
+
+// Rejoue les clics arrivés avant le chargement de ce fichier (file créée par le layout)
+if (Array.isArray(SD._queue)) {
+    SD._queue.splice(0).forEach((args) => SD.addToCart(...args));
+    delete SD._queue;
+}

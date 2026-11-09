@@ -28,6 +28,17 @@ class BanniereController extends Controller
     {
         $banniere = Banniere::instance();
 
+        // Nettoyage de la liste des pixels avant validation :
+        // on ne garde que les chiffres, sans lignes vides ni doublons.
+        $request->merge([
+            'meta_pixel_ids' => collect($request->input('meta_pixel_ids', []))
+                ->map(fn ($id) => preg_replace('/\D/', '', (string) $id))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all(),
+        ]);
+
         $validated = $request->validate([
             'appelation' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
@@ -39,7 +50,8 @@ class BanniereController extends Controller
             'email' => ['required', 'email', 'max:100'],
             'numero_whatsapp' => ['nullable', 'string', 'max:30'],
             'lien_whatsapp' => ['nullable', 'url', 'max:255'],
-            'meta_id' => ['nullable', 'string', 'regex:/^\d{15,16}$/'],
+            'meta_pixel_ids' => ['nullable', 'array'],
+            'meta_pixel_ids.*' => ['string', 'regex:/^\d{15,16}$/'],
         ]);
 
         if ($request->hasFile('logo')) {

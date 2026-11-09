@@ -19,6 +19,7 @@
         ]);
     }
     foreach ($product->images as $img) {
+
         if ($img->url) {
             $allImages->push([
                 'url' => $img->url,
@@ -949,71 +950,6 @@
                 this._trackViewContent();
                 this._initOfferCountdown();   // ← ajouter cette ligne
             },
-
-            // async addToCart(qty) {
-            //     if (this.busy) return;
-            //     this.busy = true;
-            //     try {
-            //         const res = await fetch(config.cartStoreUrl, {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json',
-            //                 'X-CSRF-TOKEN': config.csrf,
-            //                 'Accept': 'application/json',
-            //                 'X-Requested-With': 'XMLHttpRequest',
-            //             },
-            //             body: JSON.stringify({
-            //                 product_id: config.productId,
-            //                 quantity: qty,
-            //             }),
-            //         });
-            //         if (!res.ok) throw new Error('Erreur panier');
-
-            //         // Notifie le compteur global du panier si présent
-            //         window.dispatchEvent(new CustomEvent('cart:updated'));
-
-            //         // Petit feedback visuel
-            //         this.flash('Ajouté au panier ✓');
-            //     } catch (e) {
-            //         this.flash("Une erreur s'est produite. Réessayez.", true);
-            //     } finally {
-            //         this.busy = false;
-            //     }
-            // },
-
-            // async buyNow(qty) {
-            //     if (this.busy) return;
-            //     this.busy = true;
-            //     try {
-            //         const res = await fetch(config.cartStoreUrl, {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json',
-            //                 'X-CSRF-TOKEN': config.csrf,
-            //                 'Accept': 'application/json',
-            //                 'X-Requested-With': 'XMLHttpRequest',
-            //             },
-            //             body: JSON.stringify({
-            //                 product_id: config.productId,
-            //                 quantity: qty,
-            //             }),
-            //         });
-            //         if (!res.ok) throw new Error('Erreur panier');
-            //         window.location.href = config.checkoutUrl;
-            //     } catch (e) {
-            //         this.busy = false;
-            //         this.flash("Une erreur s'est produite. Réessayez.", true);
-            //     }
-            // },
-
-            // flash(message, isError = false) {
-            //     const el = document.createElement('div');
-            //     el.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-full text-sm font-semibold shadow-lift '
-            //         + (isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white');
-            //     el.textContent = message;
-            //     document.body.appendChild(el);
-            //     setTimeout(() => el.remove(), 2200);
-            // },
 
             // ─── Helper interne : POST vers cart.store + maj DOM ───
             async _postToCart(qty) {

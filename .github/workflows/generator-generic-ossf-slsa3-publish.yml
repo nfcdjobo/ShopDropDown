@@ -28,16 +28,16 @@ jobs:
           npm ci && npm run build
 
       - name: Créer l'archive
-        run: tar --exclude=.git --exclude=node_modules -czf /tmp/shopdropdown.tar.gz . && mv /tmp/shopdropdown.tar.gz .
+        run: tar --exclude=.git --exclude=node_modules -czf /tmp/ShopDrop.tar.gz . && mv /tmp/ShopDrop.tar.gz .
 
       - name: Calculer les hash
         id: hash
-        run: echo "hashes=$(sha256sum shopdropdown.tar.gz | base64 -w0)" >> "$GITHUB_OUTPUT"
+        run: echo "hashes=$(sha256sum ShopDrop.tar.gz | base64 -w0)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: shopdropdown
-          path: shopdropdown.tar.gz
+          name: ShopDrop
+          path: ShopDrop.tar.gz
 
   provenance:
     needs: [build]

@@ -248,11 +248,13 @@
                 <span class="ml-1 text-ink-muted/60 normal-case font-normal">({{ $product->proofs->count() }})</span>
             </p>
             <div class="flex flex-col gap-3">
+
                 @foreach($product->proofs as $proof)
                     <div class="flex gap-3 p-3 rounded-xl bg-ivory-100"
                          x-data="{ markedForDelete: false }">
                         <div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 relative"
                              :class="markedForDelete ? 'opacity-40' : ''">
+
                             <img src="{{ $proof->url }}" class="w-full h-full object-cover" alt="{{ $proof->alt_text }}">
                             <div x-show="markedForDelete" class="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <i class="fa-solid fa-trash text-red-500 text-lg drop-shadow"></i>

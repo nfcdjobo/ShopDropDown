@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\Concerns\ProductImageRules;
 use App\Models\Product;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rule;
  */
 class StoreProductItemRequest extends FormRequest
 {
+    use ProductImageRules;
+
     public function authorize(): bool
     {
         $user = $this->user();
@@ -43,9 +46,9 @@ class StoreProductItemRequest extends FormRequest
             'package_sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
 
             // Médias
-            'featured_image'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
+            'featured_image'  => ['nullable', ...$this->imageFileRules()],
             'gallery'         => ['nullable', 'array', 'max:10'],
-            'gallery.*'       => ['image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
+            'gallery.*'       => $this->imageFileRules(),
 
             // Attributs flexibles (taille, couleur…) — optionnels
             'attributes'      => ['nullable', 'array'],
@@ -54,17 +57,13 @@ class StoreProductItemRequest extends FormRequest
 
     public function messages(): array
     {
-        return [
+        return array_merge($this->imageMessages(), [
             'name.required'           => 'Le nom du sous-produit est obligatoire.',
             'package_role.required'   => 'Indiquez si ce sous-produit est le principal ou un bonus.',
             'package_role.in'         => 'Le rôle doit être « principal » ou « bonus ».',
             'video_url.url'           => 'Le lien vidéo doit être une URL valide.',
-            'featured_image.image'    => "L'image principale doit être un fichier image valide.",
-            'featured_image.max'      => "L'image principale ne doit pas dépasser 4 Mo.",
             'gallery.max'             => 'Vous pouvez joindre au maximum 10 images de galerie.',
-            'gallery.*.image'         => 'Chaque fichier de la galerie doit être une image.',
-            'gallery.*.max'           => 'Chaque image de la galerie ne doit pas dépasser 4 Mo.',
-        ];
+        ]);
     }
 
     /**

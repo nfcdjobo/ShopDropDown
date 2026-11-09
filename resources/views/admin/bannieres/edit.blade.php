@@ -27,8 +27,72 @@
     </p>
 </div>
 
+@php
+    $pixelsInit = array_values(old('meta_pixel_ids', $banniere->meta_pixel_ids ?? [])) ?: [''];
+@endphp
+
+<script>
+    // État du formulaire de la bannière (aperçu du logo + liste contrôlée des pixels Meta)
+    function banniereForm(initialPixels) {
+        var PIXEL_REGEX = /^\d{15,16}$/;
+
+        return {
+            logoPreview: null,
+            pixels: initialPixels,
+
+            // Message d'erreur d'une ligne ('' si vide ou valide)
+            error: function (i) {
+                var value = this.pixels[i];
+                if (!value) return '';
+                if (!PIXEL_REGEX.test(value)) {
+                    return 'Doit contenir 15 ou 16 chiffres (' + value.length + ' saisi' + (value.length > 1 ? 's' : '') + ').';
+                }
+                if (this.pixels.indexOf(value) !== i) return 'Ce pixel figure déjà dans la liste.';
+                return '';
+            },
+
+            get hasErrors() {
+                var self = this;
+                return this.pixels.some(function (p, i) { return self.error(i) !== ''; });
+            },
+
+            get filledCount() {
+                return this.pixels.filter(function (p) { return p; }).length;
+            },
+
+            // Nouveau champ autorisé seulement si AUCUN champ n'est vide et que tous sont valides
+            get canAdd() {
+                var self = this;
+                return this.pixels.every(function (p, i) { return p !== '' && self.error(i) === ''; });
+            },
+
+            add: function () {
+                if (!this.canAdd) return;
+                this.pixels.push('');
+                var root = this.$root;
+                this.$nextTick(function () {
+                    var inputs = root.querySelectorAll('input[name="meta_pixel_ids[]"]');
+                    if (inputs.length) inputs[inputs.length - 1].focus();
+                });
+            },
+
+            remove: function (i) {
+                this.pixels.splice(i, 1);
+                if (!this.pixels.length) this.pixels.push('');
+            },
+
+            // Ne garder que des chiffres à la saisie et à la copie-colle
+            sanitize: function (i) {
+                this.pixels[i] = String(this.pixels[i] || '').replace(/\D/g, '').slice(0, 16);
+            },
+        };
+    }
+</script>
+
 <form action="{{ route('admin.banniere.update') }}" method="POST" enctype="multipart/form-data"
-      x-data="{ logoPreview: null }" class="grid lg:grid-cols-3 gap-6 lg:gap-8">
+      x-data="banniereForm(@js($pixelsInit))"
+      @submit="if (hasErrors) { $event.preventDefault(); $el.querySelector('[aria-invalid=true]')?.focus(); }"
+      class="grid lg:grid-cols-3 gap-6 lg:gap-8">
     @csrf
     @method('PUT')
 
@@ -294,31 +358,80 @@
     </header>
 
     <div class="p-5 lg:p-6 flex flex-col gap-5">
-        {{-- Pixel Meta --}}
+        {{-- Pixels Meta (plusieurs possibles) --}}
         <div>
-            <label for="meta_id" class="block text-xs uppercase tracking-widest text-ink-muted font-semibold mb-1.5">
-                Pixel Meta (Facebook)
-            </label>
-            <div class="relative">
-                <i class="fa-brands fa-facebook absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-sm"></i>
-                <input type="text" id="meta_id" name="meta_id"
-                       value="{{ old('meta_id', $banniere->meta_id) }}"
-                       inputmode="numeric"
-                       pattern="\d{15,16}"
-                       maxlength="16"
-                       class="w-full h-11 pl-10 pr-4 rounded-xl bg-ivory-100 ring-1 ring-ink/5 focus:ring-2 focus:ring-terracotta-500 focus:bg-white outline-none transition font-mono @error('meta_id') ring-red-300 @enderror"
-                       placeholder="123456789012345">
+            <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs uppercase tracking-widest text-ink-muted font-semibold">
+                    Pixels Meta (Facebook)
+                </label>
+                <span class="text-[11px] text-ink-muted" x-text="filledCount + (filledCount > 1 ? ' pixels' : ' pixel')"></span>
             </div>
-            @error('meta_id')
-                <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i>{{ $message }}</p>
-            @enderror
+
+            <div class="flex flex-col gap-3">
+                <template x-for="(pixel, i) in pixels" :key="i">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <i class="fa-brands fa-facebook absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-sm"></i>
+                                <input type="text" name="meta_pixel_ids[]"
+                                       x-model="pixels[i]"
+                                       @input="sanitize(i)"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       maxlength="16"
+                                       :aria-label="'Pixel Meta n°' + (i + 1)"
+                                       :aria-invalid="error(i) !== '' ? 'true' : 'false'"
+                                       :class="error(i) ? 'ring-2 ring-red-300 focus:ring-red-400' : 'ring-1 ring-ink/5 focus:ring-2 focus:ring-terracotta-500'"
+                                       class="w-full h-11 pl-10 pr-4 rounded-xl bg-ivory-100 focus:bg-white outline-none transition font-mono"
+                                       placeholder="123456789012345">
+                            </div>
+                            <button type="button"
+                                    @click="remove(i)"
+                                    class="w-11 h-11 flex-none inline-flex items-center justify-center rounded-xl bg-ivory-100 text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
+                                    :aria-label="'Retirer le pixel n°' + (i + 1)">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                        <p x-show="error(i)" x-cloak x-text="error(i)"
+                           class="mt-1.5 text-xs text-red-600 flex items-center gap-1"></p>
+                    </div>
+                </template>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <button type="button"
+                        @click="add()"
+                        :disabled="!canAdd"
+                        class="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-ivory-100 text-ink text-xs font-semibold hover:bg-ivory-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-ivory-100">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    Ajouter un pixel
+                </button>
+                <p x-show="!canAdd" x-cloak class="text-[11px] text-ink-muted">
+                    Renseignez correctement chaque pixel avant d'en ajouter un autre.
+                </p>
+            </div>
+
+            @if ($errors->has('meta_pixel_ids') || $errors->has('meta_pixel_ids.*'))
+                <div class="mt-2 flex flex-col gap-1">
+                    @error('meta_pixel_ids')
+                        <p class="text-xs text-red-600 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i>{{ $message }}</p>
+                    @enderror
+                    @foreach ($errors->get('meta_pixel_ids.*') as $key => $messages)
+                        <p class="text-xs text-red-600 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            Pixel n°{{ (int) \Illuminate\Support\Str::afterLast($key, '.') + 1 }} : l'identifiant doit contenir 15 ou 16 chiffres.
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+
             <p class="mt-2 text-xs text-ink-muted flex items-start gap-1.5">
                 <i class="fa-solid fa-circle-info text-[10px] mt-0.5"></i>
                 <span>
-                    Identifiant à 15 ou 16 chiffres trouvé dans
+                    Identifiants à 15 ou 16 chiffres trouvés dans
                     <a href="https://business.facebook.com/events_manager" target="_blank" rel="noopener" class="text-terracotta-500 hover:underline font-semibold">
-                        Meta Events Manager
-                    </a>.
+                        Meta Events Manager</a>.
+                    Chaque visite et chaque événement (ajout au panier, achat…) est envoyé à tous les pixels listés.
                     Laissez vide pour désactiver le tracking.
                 </span>
             </p>
@@ -328,10 +441,10 @@
     </div>
 
     {{-- =============== COLONNE DROITE : APERÇU =============== --}}
-    <div class="flex flex-col gap-6 lg:gap-8">
+    <div class="flex flex-col gap-6 lg:gap-8 lg:sticky lg:top-24 lg:self-start">
 
         {{-- Aperçu --}}
-        <div class="bg-white rounded-2xl ring-1 ring-ink/5 shadow-soft overflow-hidden lg:sticky lg:top-24">
+        <div class="bg-white rounded-2xl ring-1 ring-ink/5 shadow-soft overflow-hidden">
             <div class="px-5 py-4 flex items-center justify-between border-b border-ink/5">
                 <h3 class="font-display text-lg font-semibold">Aperçu</h3>
                 <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
@@ -379,10 +492,14 @@
         {{-- Actions --}}
         <div class="bg-white rounded-2xl ring-1 ring-ink/5 shadow-soft p-5 flex flex-col gap-3">
             <button type="submit"
-                    class="w-full inline-flex items-center justify-center gap-2 h-11 rounded-full bg-terracotta-500 text-white text-sm font-semibold hover:bg-terracotta-600 transition-colors">
+                    :disabled="hasErrors"
+                    class="w-full inline-flex items-center justify-center gap-2 h-11 rounded-full bg-terracotta-500 text-white text-sm font-semibold hover:bg-terracotta-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-terracotta-500">
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>Enregistrer les modifications</span>
             </button>
+            <p x-show="hasErrors" x-cloak class="text-[11px] text-red-600 text-center flex items-center justify-center gap-1">
+                <i class="fa-solid fa-circle-exclamation"></i> Corrigez les pixels Meta invalides.
+            </p>
             <a href="{{ route('admin.dashboard') }}"
                class="w-full inline-flex items-center justify-center gap-2 h-11 rounded-full bg-ivory-100 text-ink text-sm font-semibold hover:bg-ivory-200 transition-colors">
                 <i class="fa-solid fa-arrow-left"></i>

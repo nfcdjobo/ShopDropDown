@@ -15,6 +15,8 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\PwaController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,7 +26,20 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/offline', [PwaController::class, 'offline'])->name('pwa.offline');
+
+Route::get('/sw.js', function () {
+    return response(file_get_contents(public_path('sw.js')), 200, [
+        'Content-Type'           => 'application/javascript; charset=UTF-8',
+        'Service-Worker-Allowed' => '/',
+        'Cache-Control'          => 'no-cache',
+    ]);
+})->withoutMiddleware(['web']);
+
 Route::get('/catalogue/{product:slug}', [LandingController::class, 'show'])->name('products.show');
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -59,15 +74,16 @@ Route::prefix('k2pz-dz1')->name('checkout.')->group(function () {
 | ╔═══════════════════════════════════════════════════════════════╗
 | ║  BACK-OFFICE ADMIN — Authentification (routes PUBLIQUES)      ║
 | ║                                                               ║
-| ║  IMPORTANT : ces routes doivent être déclarées AVANT           ║
-| ║  le groupe middleware(['auth', 'is.admin']) car elles sont     ║
-| ║  publiques (login, forgot password…)                           ║
+| ║  IMPORTANT : ces routes doivent être déclarées AVANT          ║
+| ║  le groupe middleware(['auth', 'is.admin']) car elles sont    ║
+| ║  publiques (login, forgot password…)                          ║
 | ╚═══════════════════════════════════════════════════════════════╝
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('guest')->group(function () {
     Route::get('/admin/login',  [AdminAuthController::class, 'showLogin'])->name('admin.login');
+    Route::get('/reinitialiser/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
 });
 
 Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
@@ -125,11 +141,6 @@ Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
         Route::delete('products/{product}/faqs/{faq}', [ProductFaqController::class, 'destroy'])->name('products.faqs.destroy');
 
 
-
-
-
-
-
         // Catégories
         Route::resource('j8cz-v2s', AdminCategoryController::class)->names('categories')->parameters(['j8cz-v2s' => 'category']);
 
@@ -184,9 +195,15 @@ Route::middleware(['auth', 'must.change.password'])->prefix('f2tz-x5p')->name('c
 | Sinon elle sert de fallback pour le form de logout du layout admin.
 */
 
+
 Route::post('/logout', function () {
-    auth()->logout();
+
+    Auth::logout();
+
     request()->session()->invalidate();
+
     request()->session()->regenerateToken();
+
     return redirect()->route('admin.login');
+
 })->middleware('auth')->name('logout');

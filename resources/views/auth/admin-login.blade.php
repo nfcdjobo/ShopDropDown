@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Connexion Administration — {{ config('app.name', 'Shop Dropdown') }}</title>
+    <title>Connexion Administration — {{ config('app.name', 'Shop Drop') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
         <div class="mb-10 text-center">
             <div class="inline-flex items-center gap-3">
                 <span class="w-12 h-12 rounded-full bg-terracotta-500 text-white flex items-center justify-center font-display font-bold text-xl">S</span>
-                <span class="font-display text-3xl font-semibold tracking-tight">Shop<span class="text-terracotta-500">·</span>Dropdown</span>
+                <span class="font-display text-3xl font-semibold tracking-tight">Shop<span class="text-terracotta-500">·</span>DropDown</span>
             </div>
             <p class="mt-2 text-xs uppercase tracking-[.2em] text-ivory-50/40 font-semibold">Espace Administration</p>
         </div>
@@ -65,7 +65,7 @@
                             <input type="email" name="email" id="email"
                                    value="{{ old('email') }}"
                                    required autofocus autocomplete="username"
-                                   placeholder="admin@shopdropdown.ci"
+                                   placeholder="admin@ShopDrop.ci"
                                    class="w-full pl-11 pr-4 h-12 rounded-2xl bg-ivory-50/10 border border-ivory-50/10 text-ivory-50 placeholder-ivory-50/30 focus:border-terracotta-500 focus:bg-ivory-50/15 focus:ring-2 focus:ring-terracotta-500/20 outline-none transition text-sm">
                         </div>
                         @error('email')
@@ -132,7 +132,7 @@
 
         {{-- Footer --}}
         <p class="mt-12 text-[10px] text-ivory-50/20 text-center">
-            © {{ date('Y') }} Shop Dropdown · Accès sécurisé · Toutes les tentatives sont enregistrées
+            © {{ date('Y') }} Shop Drop · Accès sécurisé · Toutes les tentatives sont enregistrées
         </p>
     </div>
 

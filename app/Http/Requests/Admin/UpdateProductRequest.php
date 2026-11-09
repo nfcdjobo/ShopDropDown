@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\Concerns\ProductImageRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
+    use ProductImageRules;
+
     public function authorize(): bool
     {
         return $this->user()?->isAdmin() ?? false;
@@ -45,11 +48,11 @@ class UpdateProductRequest extends FormRequest
             'meta_title'          => ['nullable', 'string', 'max:150'],
             'meta_description'    => ['nullable', 'string', 'max:300'],
 
-            'featured_image'      => ['nullable', 'image', 'max:4096'],
+            'featured_image'      => ['nullable', ...$this->imageFileRules()],
 
             // ─── Galerie ─────────────────────────────────────────────────
             'gallery'             => ['nullable', 'array', 'max:10'],
-            'gallery.*'           => ['image', 'max:4096'],
+            'gallery.*'           => $this->imageFileRules(),
             'delete_images'       => ['nullable', 'array'],
             'delete_images.*'     => ['string', 'exists:product_images,id'],
 
@@ -58,7 +61,7 @@ class UpdateProductRequest extends FormRequest
 
             // ─── Preuves visuelles : ajout ───────────────────────────────
             'proofs'              => ['nullable', 'array', 'max:10'],
-            'proofs.*'            => ['image', 'max:4096'],
+            'proofs.*'            => $this->imageFileRules(),
             'proof_captions'      => ['nullable', 'array'],
             'proof_captions.*'    => ['nullable', 'string', 'max:200'],
             'proof_alt_texts'     => ['nullable', 'array'],
@@ -81,9 +84,9 @@ class UpdateProductRequest extends FormRequest
 
     public function messages(): array
     {
-        return [
+        return array_merge($this->imageMessages(), [
             'availability_max_days.gte' => 'Le délai maximum doit être supérieur ou égal au délai minimum.',
-        ];
+        ]);
     }
 
     protected function prepareForValidation(): void
