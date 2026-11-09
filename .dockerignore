@@ -23,3 +23,14 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+erre.js
+
+deploy-shopdropdown.sh
+deploy-remote.sh
+docker-compose.yml
+Dockerfile.apache2-php-fpm-full.v1
+*.sql
+
+deploy.conf
+data.csv

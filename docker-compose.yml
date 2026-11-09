@@ -1,11 +1,11 @@
 services:
 
   web:
-    build: .
-    container_name: shopdropdown_app
+    image: ${DOCKER_USER}/shopdropdown:${TAG:-latest}   # remplace build: .
+    container_name: shopdropdown
     restart: unless-stopped
     expose:
-      - "80"                          # Plus de ports: → Traefik s'en charge
+      - "80"
     env_file:
       - .env
     volumes:
@@ -19,24 +19,24 @@ services:
       - "traefik.http.services.shopdropdown.loadbalancer.server.port=80"
     networks:
       - shopdropdown_net
-      - traefik_net               # Rejoindre le réseau de Traefik
+      - traefik_net
     depends_on:
       db:
         condition: service_healthy
 
   db:
-    image: postgres:16
+    image: postgres:18
     container_name: shopdropdown_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: geasamwa_shopdropdown5fji858derr
-      POSTGRES_USER: geasamwa_shopdropdown9858ojiu55
-      POSTGRES_PASSWORD: 4Y])WhI5K3@j
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - shopdropdown_pgdata:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U geasamwa_shopdropdown9858ojiu55 -d geasamwa_shopdropdown5fji858derr"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,5 +52,4 @@ networks:
   shopdropdown_net:
     driver: bridge
   traefik_net:
-    external: true                # Réseau existant de Traefik
-
+    external: true

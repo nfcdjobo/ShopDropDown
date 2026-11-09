@@ -48,7 +48,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ url('admin/reinitialiser-mot-de-passe') }}"
+            <form method="POST" action="{{ $action }}"
                   x-data="{
                       pw: '', pc: '', show: false,
                       get lengthOk() { return this.pw.length >= 8; },

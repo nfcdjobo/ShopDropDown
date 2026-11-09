@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 /**
  * Authentification dédiée au back-office.
@@ -150,17 +151,28 @@ class AdminAuthController extends Controller
         $user = $this->findUserByEmail($email);
 
         if ($user && $user->is_active) {
-            // On transmet l'email EXACT stocké en base : le jeton est lié à cette valeur.
-            $status = Password::sendResetLink(['email' => $user->email]);
 
-            if ($status !== Password::RESET_LINK_SENT) {
-                // Ex. Password::RESET_THROTTLED (une demande < 60 s) : rien n'est envoyé.
-                Log::warning('Réinitialisation mot de passe : lien non envoyé', [
-                    'status'  => $status,
+            try {
+                // On transmet l'email EXACT stocké en base : le jeton est lié à cette valeur.
+                $status = Password::sendResetLink(['email' => $user->email]);
+
+                if ($status !== Password::RESET_LINK_SENT) {
+                    // Ex. Password::RESET_THROTTLED (une demande < 60 s) : rien n'est envoyé.
+                    Log::warning('Réinitialisation mot de passe : lien non envoyé', [
+                        'status'  => $status,
+                        'user_id' => $user->id,
+                    ]);
+                }
+            } catch (Throwable $e) {
+                // Panne SMTP, identifiants refusés… : on journalise mais on répond comme d'habitude.
+                // Une erreur 500 ici révélerait que le compte existe.
+                Log::error('Réinitialisation mot de passe : envoi du mail impossible', [
                     'user_id' => $user->id,
+                    'error'   => $e->getMessage(),
                 ]);
             }
         }
+
 
         RateLimiter::hit($throttleKey, 600);
 
@@ -175,8 +187,10 @@ class AdminAuthController extends Controller
     public function showResetPassword(Request $request, string $token): View
     {
         return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $request->query('email', ''),
+            'token'  => $token,
+            'email'  => $request->query('email', ''),
+            // POST /{préfixe}/reinitialiser-mot-de-passe = URL courante sans le /{token}
+            'action' => Str::beforeLast($request->url(), '/'),
         ]);
     }
 

@@ -32,14 +32,13 @@ class SuperAdminSeeder extends Seeder
         $firstName = env('SUPER_ADMIN_FIRST',    'Admin');
         $lastName  = env('SUPER_ADMIN_LAST',     'Principal');
 
-        // updateOrCreate : idempotent, safe à relancer plusieurs fois
-        $user = User::updateOrCreate(
+        // firstOrCreate : si l'email existe déjà, rien n'est modifié
+        $user = User::firstOrCreate(
             ['email' => $email],
             [
                 'first_name'           => $firstName,
                 'last_name'            => $lastName,
                 'phone'                => null,
-                'email'                => $email,
                 'password'             => Hash::make($password),
                 'role'                 => 'super_admin',
                 'is_active'            => true,
@@ -49,10 +48,12 @@ class SuperAdminSeeder extends Seeder
         );
 
         $this->command->info('');
-        $this->command->info('  ✅ Super admin créé / mis à jour :');
-        $this->command->info("     Email    : {$email}");
-        $this->command->info("     Nom      : {$user->full_name}");
-        $this->command->warn("     ⚠️  Changez le mot de passe en production via .env !");
+        if ($user->wasRecentlyCreated) {
+            $this->command->info("  ✅ Super admin créé : {$email}");
+            $this->command->warn('  ⚠️  Changez le mot de passe en production via .env !');
+        } else {
+            $this->command->info("  ℹ️  Super admin déjà existant, aucune modification : {$email}");
+        }
         $this->command->info('');
     }
 }

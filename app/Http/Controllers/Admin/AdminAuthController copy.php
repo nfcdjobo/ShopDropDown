@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -19,7 +23,9 @@ use Illuminate\View\View;
  *  - Avoir une URL de login propre (/admin/login) distincte de la boutique
  *  - Ajouter un rate-limiting agressif ciblé sur le back-office
  *  - Rediriger directement sur admin.dashboard après login
- *  - Gérer le "mot de passe oublié" côté admin sans impacter le flow client
+ *  - Gérer le "mot de passe oublié" pour TOUS les comptes (clients et administrateurs) :
+ *    les clients créés automatiquement au checkout reçoivent un mot de passe par défaut
+ *    et doivent pouvoir le réinitialiser
  */
 class AdminAuthController extends Controller
 {
@@ -125,13 +131,13 @@ class AdminAuthController extends Controller
      */
     public function sendResetLink(Request $request): RedirectResponse
     {
-
-        $request->validate([
+        $data  = $request->validate([
             'email' => ['required', 'string', 'email', 'max:150'],
         ]);
+        $email = Str::lower(trim($data['email']));
 
-        // Rate-limiting : 3 tentatives / 10 minutes
-        $throttleKey = 'password-reset:' . strtolower($request->input('email')) . '|' . $request->ip();
+        // Rate-limiting : 3 demandes / 10 minutes par email + IP
+        $throttleKey = 'password-reset:' . $email . '|' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -140,30 +146,26 @@ class AdminAuthController extends Controller
             ]);
         }
 
+        // Réponse identique que le compte existe ou non : on ne révèle rien sur les comptes.
+        $user = $this->findUserByEmail($email);
 
+        if ($user && $user->is_active) {
+            // On transmet l'email EXACT stocké en base : le jeton est lié à cette valeur.
+            $status = Password::sendResetLink(['email' => $user->email]);
 
-        // Vérification discrète : on ne révèle pas si l'email n'existe pas
-        $user = User::where('email', $request->input('email'))->first();
-//  dd($throttleKey, $user);
-        if ($user && !$user->isAdmin()) {
-
-            // L'email existe mais c'est un client : on ne répond pas différemment
-            $user = null;
-        }
-
-        //  dd($throttleKey);
-        if ($user) {
-            $status = Password::sendResetLink(
-                $request->only('email'),
-            );
-        } else {
-            $status = Password::RESET_LINK_SENT; // réponse identique
+            if ($status !== Password::RESET_LINK_SENT) {
+                // Ex. Password::RESET_THROTTLED (une demande < 60 s) : rien n'est envoyé.
+                Log::warning('Réinitialisation mot de passe : lien non envoyé', [
+                    'status'  => $status,
+                    'user_id' => $user->id,
+                ]);
+            }
         }
 
         RateLimiter::hit($throttleKey, 600);
 
         return back()->with('status',
-            'Si cet email correspond à un compte administrateur, un lien de réinitialisation a été envoyé.'
+            'Si cet email correspond à un compte, un lien de réinitialisation vient d\'être envoyé.'
         );
     }
 
@@ -183,35 +185,97 @@ class AdminAuthController extends Controller
      */
     public function resetPassword(Request $request): RedirectResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'token'                 => ['required', 'string'],
             'email'                 => ['required', 'email'],
             'password'              => ['required', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['required', 'string'],
+        ], [
+            'token.required'                 => 'Le lien de réinitialisation est incomplet. Redemandez-en un.',
+            'email.required'                 => "L'adresse email est obligatoire.",
+            'email.email'                    => "L'adresse email n'est pas valide.",
+            'password.required'              => 'Le nouveau mot de passe est obligatoire.',
+            'password.min'                   => 'Le mot de passe doit contenir au moins 8 caractères.',
+            'password.confirmed'             => 'Les deux mots de passe ne correspondent pas.',
+            'password_confirmation.required' => 'Veuillez confirmer le mot de passe.',
         ]);
 
+        // Limite les essais de jetons : 10 / minute par IP
+        $throttleKey = 'admin-reset:' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 10)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors(['email' => "Trop de tentatives. Réessayez dans {$seconds} secondes."]);
+        }
+
+        RateLimiter::hit($throttleKey, 60);
+
+        // Email exact de la base (casse) ; si le compte est inconnu on garde la saisie → INVALID_USER
+        $account = $this->findUserByEmail($data['email']);
+        $email   = $account?->email ?? $data['email'];
+
+        $resetUser = null; // compte réellement modifié (sert à choisir la page de connexion)
+
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            [
+                'email'                 => $email,
+                'password'              => $data['password'],
+                'password_confirmation' => $data['password_confirmation'],
+                'token'                 => $data['token'],
+            ],
+            function (User $user, string $password) use (&$resetUser) {
+                $resetUser = $user;
+
                 $user->forceFill([
-                    'password'             => $password,
+                    'password'             => $password,           // haché par le cast 'hashed'
                     'must_change_password' => false,
+                    'remember_token'       => Str::random(60),     // invalide les anciens « se souvenir de moi »
                 ])->save();
+
+                event(new PasswordReset($user));
             }
         );
 
         if ($status === Password::PASSWORD_RESET) {
+            RateLimiter::clear($throttleKey);
+
             return redirect()
-                ->route('admin.login')
+                ->to($this->loginUrlFor($resetUser))
                 ->with('success', 'Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.');
         }
 
-        return back()->withErrors([
-            'email' => match ($status) {
-                Password::INVALID_TOKEN => 'Le lien est invalide ou expiré.',
-                Password::INVALID_USER  => 'Aucun compte trouvé avec cet email.',
-                default                 => 'Impossible de réinitialiser le mot de passe.',
-            },
-        ]);
+        // Aide au diagnostic (jamais le jeton ni le mot de passe dans les logs)
+        Log::warning('Réinitialisation mot de passe : échec', ['status' => $status, 'email' => $email]);
+
+        // Message générique : ne distingue pas « compte inconnu » de « jeton invalide »
+        return back()
+            ->withInput($request->only('email'))
+            ->withErrors([
+                'email' => 'Le lien est invalide ou expiré. Redemandez un nouveau lien de réinitialisation.',
+            ]);
+    }
+
+    /**
+     * Retrouve un compte actif par email (client ou administrateur), sans tenir compte
+     * de la casse. Les comptes supprimés (SoftDeletes) sont exclus automatiquement.
+     */
+    private function findUserByEmail(string $email): ?User
+    {
+        return User::query()
+            ->whereRaw('LOWER(email) = ?', [Str::lower(trim($email))])
+            ->first();
+    }
+
+    /**
+     * Page de connexion adaptée au rôle : back-office pour les admins, route « login »
+     * (espace client) pour les autres, ou l'accueil si elle n'existe pas.
+     */
+    private function loginUrlFor(?User $user): string
+    {
+        if ($user?->isAdmin()) {
+            return route('admin.login');
+        }
+
+        return Route::has('login') ? route('login') : url('/');
     }
 }
