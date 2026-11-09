@@ -50,11 +50,19 @@ if [ ! -f "$APP_DIR/composer.json" ]; then
 fi
 
 # ─── 5. Config Nginx ────────────────────────────────────────────
-echo "🌐 [5/6] Configuration Nginx..."
-cp "$SRC_DIR/nginx-shopdropdown.conf" /etc/nginx/sites-available/$DOMAIN
-ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/$DOMAIN
-nginx -t && systemctl reload nginx
-echo "    ✅ Nginx configuré"
+# echo "🌐 [5/6] Configuration Nginx..."
+# cp "$SRC_DIR/nginx-shopdropdown.conf" /etc/nginx/sites-available/$DOMAIN
+# ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/$DOMAIN
+# nginx -t && systemctl reload nginx
+# echo "    ✅ Nginx configuré"
+
+# ─── 5. Réseau Traefik ──────────────────────────────────────────
+echo "🌐 [5/6] Vérification du réseau Traefik..."
+docker network inspect traefik_net >/dev/null 2>&1 || {
+    echo "    ❌ Réseau traefik_net introuvable (Traefik est-il démarré ?)"
+    exit 1
+}
+echo "    ✅ Traefik prêt (routage et SSL via les labels)"
 
 # ─── 6. Lancer Docker Compose ───────────────────────────────────
 echo "🐳 [6/6] Build et démarrage des containers Docker..."

@@ -13,6 +13,7 @@ services:
       - shopdropdown_logs:/var/log
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=web"
       - "traefik.http.routers.shopdropdown.rule=Host(`shopdropdown.barriservices.com`)"
       - "traefik.http.routers.shopdropdown.entrypoints=websecure"
       - "traefik.http.routers.shopdropdown.tls.certresolver=letsencrypt"
