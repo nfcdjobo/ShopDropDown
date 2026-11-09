@@ -58,11 +58,11 @@ fi
 
 # ─── 5. Réseau Traefik ──────────────────────────────────────────
 echo "🌐 [5/6] Vérification du réseau Traefik..."
-docker network inspect traefik_net >/dev/null 2>&1 || {
-    echo "    ❌ Réseau traefik_net introuvable (Traefik est-il démarré ?)"
+docker network inspect web >/dev/null 2>&1 || {
+    echo "    ❌ Réseau web introuvable (Traefik est-il démarré ?)"
     exit 1
 }
-echo "    ✅ Traefik prêt (routage et SSL via les labels)"
+echo "    ✅ Réseau web présent"
 
 # ─── 6. Lancer Docker Compose ───────────────────────────────────
 echo "🐳 [6/6] Build et démarrage des containers Docker..."
