@@ -49,5 +49,5 @@ printenv | grep -v '^_=' | grep -v '^SHLVL=' | grep -v '^HOSTNAME=' >> /etc/envi
 
 echo "==> Demarrage des services"
 service cron start
-service php8.3-fpm start
+service php8.4-fpm start
 exec apache2-foreground

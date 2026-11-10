@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.3
+ARG PHP_VERSION=8.4
 
 # ========== STAGE 1 : Build des assets Vite avec Node ==========
 FROM node:20-alpine AS assets
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # ========== STAGE 2 : Image applicative PHP/Apache ==========
-FROM nfcdjobo/apache2-php-fpm-full:v8.3
+FROM nfcdjobo/apache2-php-fpm-full:v8.4
 SHELL ["/bin/bash", "-c"]
 
 ARG APP_DIR=/var/www/app
