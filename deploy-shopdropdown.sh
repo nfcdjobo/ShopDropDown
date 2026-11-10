@@ -49,13 +49,6 @@ if [ ! -f "$APP_DIR/composer.json" ]; then
     exit 1
 fi
 
-# ─── 5. Config Nginx ────────────────────────────────────────────
-# echo "🌐 [5/6] Configuration Nginx..."
-# cp "$SRC_DIR/nginx-shopdropdown.conf" /etc/nginx/sites-available/$DOMAIN
-# ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/$DOMAIN
-# nginx -t && systemctl reload nginx
-# echo "    ✅ Nginx configuré"
-
 # ─── 5. Réseau Traefik ──────────────────────────────────────────
 echo "🌐 [5/6] Vérification du réseau Traefik..."
 docker network inspect web >/dev/null 2>&1 || {
