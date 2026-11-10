@@ -18,12 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
+        // Derrière Nginx (reverse proxy) : fait confiance à X-Forwarded-Proto
+        // pour générer des URLs en https://
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'must.change.password' => EnsureMustChangePassword::class,
             'is.admin'             => EnsureIsAdmin::class,
         ]);
 
-        // ↓ C'est ici que se règle le problème.
         // Laravel cherche la route 'login' quand auth échoue — elle n'existe pas.
         // On lui indique où rediriger selon que la requête vise l'admin ou le front.
         $middleware->redirectGuestsTo(function (Request $request) {
@@ -36,11 +39,18 @@ return Application::configure(basePath: dirname(__DIR__))
 
     })
     ->withExceptions(function (Exceptions $exceptions) {
-    $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-        if ($request->is('z9qz-e3m/*')) {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('home');
-    });
-})
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            // Laisse un vrai 404 pour les assets, sinon les fichiers manquants
+            // sont masqués par une redirection vers l'accueil
+            if ($request->is('build/*') || $request->is('images/*')) {
+                return null;
+            }
+
+            if ($request->is('z9qz-e3m/*')) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            return redirect()->route('home');
+        });
+    })
     ->create();
