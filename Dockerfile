@@ -16,7 +16,7 @@ ARG APP_DIR=/var/www/app
 
 # Installer pg_dump 16 + cron
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gnupg curl lsb-release cron \
+    gnupg curl lsb-release cron php8.4-pgsql \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update && apt-get install -y --no-install-recommends \
