@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
+
 class Banniere extends Model
 {
     use HasFactory, HasUuids;
@@ -59,6 +60,9 @@ class Banniere extends Model
             Cache::forget('banniere.instance');
             Cache::forget('pwa.manifest'); // manifeste PWA (nom, slogan)
         });
+
+        static::saved(fn () => Cache::forget('banniere.attributes'));
+    static::deleted(fn () => Cache::forget('banniere.attributes'));
     }
 
     /**

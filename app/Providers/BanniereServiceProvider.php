@@ -5,47 +5,41 @@ namespace App\Providers;
 use App\Models\Banniere;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class BanniereServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        //
-    }
+    private ?Banniere $banniere = null;
+    private bool $loaded = false;
 
     public function boot(): void
     {
-        View::share('banniere', $this->getBanniere());
+        // Évalué à l'affichage d'une vue, pas au démarrage de l'application
+        View::composer('*', function ($view) {
+            $view->with('banniere', $this->getBanniere());
+        });
     }
 
-    /**
-     * Récupère la bannière unique avec mise en cache des attributs uniquement.
-     */
     protected function getBanniere(): ?Banniere
     {
-        try {
-            if (! Schema::hasTable('bannieres')) {
-                return null;
-            }
+        if ($this->loaded) {
+            return $this->banniere;   // une seule lecture par requête
+        }
+        $this->loaded = true;
 
-            // On met en cache UNIQUEMENT les attributs (tableau), pas l'objet Eloquent complet.
+        try {
             $attributes = Cache::rememberForever('banniere.attributes', function () {
-                $banniere = Banniere::query()->first();
-                return $banniere ? $banniere->getAttributes() : null;
+                return Banniere::query()->first()?->getAttributes();
             });
 
-            if ($attributes === null) {
-                return null;
+            if ($attributes !== null) {
+                $this->banniere = (new Banniere)->newFromBuilder($attributes);
             }
-
-            // On reconstruit un objet Banniere frais à partir des attributs cachés.
-            return (new Banniere)->newFromBuilder($attributes);
         } catch (\Throwable $e) {
-            Log::error('❌ Erreur getBanniere: ' . $e->getMessage());
-            return null;
+            Log::error('Erreur getBanniere: ' . $e->getMessage());
         }
+
+        return $this->banniere;
     }
 }
