@@ -1,0 +1,11 @@
+stages:
+  - test
+  - deploy
+
+deploy_to_nexus:
+  image: bmiops/ubuntu-ansible:v0.1
+  stage: deploy
+  script:
+    - echo "[+] Déploiement des artefacts ..."
+    - chmod +x upload.sh
+    - ./upload.sh $NEXUS_LOGIN $NEXUS_PASSWORD

@@ -1,0 +1,9 @@
+ARG PHP_VERSION=8.1
+FROM bmiops/apache2-php-fpm:$PHP_VERSION-full
+
+ARG APP_DIR=/var/www/app
+
+WORKDIR $APP_DIR/public
+COPY . $APP_DIR/public/
+RUN chown -R www-data:www-data $APP_DIR && \
+    chmod -R 755 $APP_DIR 

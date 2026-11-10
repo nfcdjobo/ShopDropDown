@@ -1,0 +1,29 @@
+ARG PHP_VERSION=8.1
+FROM bmiops/apache2-php-fpm:$PHP_VERSION-full
+SHELL ["/bin/bash", "-c"]
+
+ARG APP_DIR=/var/www/app
+ARG APP_ENV
+ARG PHP_VERSION 
+ARG SENTRY_PROJECT_DSN
+
+WORKDIR $APP_DIR
+COPY composer.json composer.lock $APP_DIR/
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+COPY . $APP_DIR/
+RUN chown -R www-data:www-data $APP_DIR $APP_DIR/storage $APP_DIR/bootstrap/cache && \
+    chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache && \
+    composer run-script post-autoload-dump && \
+    php artisan key:generate && \ 
+    php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan storage:link
+    
+RUN [ -n "$SENTRY_PROJECT_DSN" ] && \
+    chmod +x sentry-laravel-integration.sh && \
+    ./sentry-laravel-integration.sh $APP_DIR $SENTRY_PROJECT_DSN $PHP_VERSION $APP_ENV || echo "No Monitorng"
