@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # ========== STAGE 2 : Image applicative PHP/Apache ==========
-FROM djobo/apache2-php-fpm-full:v8.3
+FROM nfcdjobo/apache2-php-fpm-full:v8.3
 SHELL ["/bin/bash", "-c"]
 
 ARG APP_DIR=/var/www/app
