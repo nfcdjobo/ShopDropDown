@@ -39,6 +39,10 @@
             ['label' => 'Produits',        'route' => 'admin.products.index','icon' => 'fa-box',       'active' => str_starts_with($routeName, 'admin.products')],
             ['label' => 'Catégories',      'route' => 'admin.categories.index','icon' => 'fa-layer-group','active' => str_starts_with($routeName, 'admin.categories')],
             ['label' => 'Clients',      'route' => 'admin.users.index','icon' => 'fa-layer-group','active' => str_starts_with($routeName, 'admin.users')],
+            // Réservé au super administrateur (le contrôleur refuse aussi l'accès aux autres rôles)
+            ...(auth()->user()?->isSuperAdmin()
+                ? [['label' => 'Administrateurs', 'route' => 'admin.administrators.index', 'icon' => 'fa-user-shield', 'active' => str_starts_with($routeName, 'admin.administrators')]]
+                : []),
             ['label' => 'Bannière', 'route' => 'admin.banniere.edit', 'icon' => 'fa-flag', 'active' => str_starts_with($routeName, 'admin.banniere')],
         ];
     @endphp

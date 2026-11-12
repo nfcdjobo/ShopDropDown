@@ -151,7 +151,6 @@ class AdminAuthController extends Controller
         $user = $this->findUserByEmail($email);
 
         if ($user && $user->is_active) {
-
             try {
                 // On transmet l'email EXACT stocké en base : le jeton est lié à cette valeur.
                 $status = Password::sendResetLink(['email' => $user->email]);
@@ -173,7 +172,6 @@ class AdminAuthController extends Controller
             }
         }
 
-
         RateLimiter::hit($throttleKey, 600);
 
         return back()->with('status',
@@ -189,8 +187,9 @@ class AdminAuthController extends Controller
         return view('auth.reset-password', [
             'token'  => $token,
             'email'  => $request->query('email', ''),
-            // POST /{préfixe}/reinitialiser-mot-de-passe = URL courante sans le /{token}
-            'action' => Str::beforeLast($request->url(), '/'),
+            // Route POST nommée : valable que la page soit ouverte via /reinitialiser/{token}
+            // (route 'password.reset') ou via le préfixe admin ('admin.password.reset').
+            'action' => route('admin.password.update'),
         ]);
     }
 

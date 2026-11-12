@@ -149,7 +149,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icons/favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icons/icon-192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/icons/apple-touch-icon.png') }}">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+    <link rel="shortcut icon" href="{{ asset('images/icons/favicon-32.png') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ PWA & APPARENCE MOBILE ═══════════════════════════════════════════════════════════════ --}}
     <meta name="theme-color" content="{{ $themeColor }}">
@@ -241,72 +241,61 @@
             </div>
 
             <div class="flex items-center gap-2 lg:gap-4">
-                {{-- @auth
-                    <a href="{{ route('customer.dashboard') }}" class="hidden sm:inline-flex items-center gap-2 text-sm font-medium hover:text-terracotta-500 transition-colors">
-                        <i class="fa-solid fa-user text-base"></i>
-                        <span class="hidden xl:inline">Mon compte</span>
-                    </a>
+
+                @auth
+                    <div x-data="{ open: false }" @click.outside="open = false" class="relative hidden sm:block">
+                        <button @click="open = !open"
+                                class="inline-flex items-center gap-2 text-sm font-medium hover:text-terracotta-500 transition-colors"
+                                :aria-expanded="open" aria-haspopup="true">
+                            <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center text-xs font-bold">
+                                {{ auth()->user()->initials }}
+                            </span>
+                            <span class="hidden xl:inline">{{ auth()->user()->first_name ?: 'Mon compte' }}</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] transition-transform"
+                            :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="open" x-cloak x-transition.opacity.duration.150ms
+                            class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-soft ring-1 ring-ink/5 overflow-hidden">
+                            <div class="px-4 py-3 border-b border-ink/5">
+                                <p class="text-xs text-ink-muted">Connecté en tant que</p>
+                                <p class="text-sm font-semibold truncate">{{ auth()->user()->email }}</p>
+                            </div>
+                            {{-- {{ in_array(auth()->user()->role, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard' }} --}}
+                            {{-- auth()->user()->role --}}
+                            {{-- {{ dd(auth()->user()->role->value) }} --}}
+                            <a href="{{ route( in_array(auth()->user()->role->value, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard') }}"
+                            class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
+                                Tableau de bord
+                            </a>
+                            <a href="{{ route('customer.orders.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                <i class="fa-solid fa-bag-shopping text-ink-muted w-4"></i>
+                                Mes commandes
+                            </a>
+                            <a href="{{ route('customer.profile.edit') }}"
+                            class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                <i class="fa-solid fa-user-pen text-ink-muted w-4"></i>
+                                Mon profil
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-ink/5">
+                                @csrf
+                                <button type="submit"
+                                        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                    <i class="fa-solid fa-right-from-bracket w-4"></i>
+                                    Se déconnecter
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 @else
                     <a href="{{ route('checkout.index') }}"
                         class="hidden sm:inline-flex items-center gap-2 text-sm font-medium hover:text-terracotta-500 transition-colors">
                         <i class="fa-solid fa-user text-base"></i>
                         <span class="hidden xl:inline">Se connecter</span>
                     </a>
-                @endauth --}}
-                @auth
-    <div x-data="{ open: false }" @click.outside="open = false" class="relative hidden sm:block">
-        <button @click="open = !open"
-                class="inline-flex items-center gap-2 text-sm font-medium hover:text-terracotta-500 transition-colors"
-                :aria-expanded="open" aria-haspopup="true">
-            <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center text-xs font-bold">
-                {{ auth()->user()->initials }}
-            </span>
-            <span class="hidden xl:inline">{{ auth()->user()->first_name ?: 'Mon compte' }}</span>
-            <i class="fa-solid fa-chevron-down text-[10px] transition-transform"
-               :class="open ? 'rotate-180' : ''"></i>
-        </button>
-
-        <div x-show="open" x-cloak x-transition.opacity.duration.150ms
-             class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-soft ring-1 ring-ink/5 overflow-hidden">
-            <div class="px-4 py-3 border-b border-ink/5">
-                <p class="text-xs text-ink-muted">Connecté en tant que</p>
-                <p class="text-sm font-semibold truncate">{{ auth()->user()->email }}</p>
-            </div>
-            {{-- {{ in_array(auth()->user()->role, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard' }} --}}
-            {{-- auth()->user()->role --}}
-            {{-- {{ dd(auth()->user()->role->value) }} --}}
-            <a href="{{ route( in_array(auth()->user()->role->value, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard') }}"
-               class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
-                Tableau de bord
-            </a>
-            <a href="{{ route('customer.orders.index') }}"
-               class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                <i class="fa-solid fa-bag-shopping text-ink-muted w-4"></i>
-                Mes commandes
-            </a>
-            <a href="{{ route('customer.profile.edit') }}"
-               class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                <i class="fa-solid fa-user-pen text-ink-muted w-4"></i>
-                Mon profil
-            </a>
-            <form method="POST" action="{{ route('logout') }}" class="border-t border-ink/5">
-                @csrf
-                <button type="submit"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <i class="fa-solid fa-right-from-bracket w-4"></i>
-                    Se déconnecter
-                </button>
-            </form>
-        </div>
-    </div>
-@else
-    <a href="{{ route('checkout.index') }}"
-        class="hidden sm:inline-flex items-center gap-2 text-sm font-medium hover:text-terracotta-500 transition-colors">
-        <i class="fa-solid fa-user text-base"></i>
-        <span class="hidden xl:inline">Se connecter</span>
-    </a>
-@endauth
+                @endauth
 
                 <a href="{{ route('cart.index') }}"
                     class="relative inline-flex items-center gap-2 px-3 lg:px-4 h-10 rounded-full bg-ink text-ivory-50 hover:bg-terracotta-500 transition-colors">

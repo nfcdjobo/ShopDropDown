@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+
+    'google' => [
+        // ... vos autres clés google existantes (client_id, etc.) si besoin
+        'site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+    ],
+
+    'bing' => [
+        'site_verification' => env('BING_SITE_VERIFICATION'),
+    ],
+
 ];

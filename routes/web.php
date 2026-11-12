@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdministratorController;
 use App\Http\Controllers\Admin\BanniereController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -107,7 +108,9 @@ Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->middleware('auth')->name('logout');
 
     // ── Routes protégées admin ────────────────────────────────────────
-    Route::middleware(['auth', 'is.admin'])->group(function () {
+    // must.change.password : un administrateur créé avec un mot de passe provisoire est
+    // redirigé vers /m7vz-c2j (PasswordChangeController) avant d'accéder au back-office.
+    Route::middleware(['auth', 'is.admin', 'must.change.password'])->group(function () {
 
 
 
@@ -156,6 +159,18 @@ Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
         Route::post('u7kz-p3x/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
 
         Route::post('u7kz-p3x/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+        // Administrateurs — réservé au super_admin (contrôle aussi fait dans le contrôleur : 403 sinon)
+        Route::prefix('h4qz-t6n')->name('administrators.')->controller(AdministratorController::class)->group(function () {
+            Route::get('/',                    'index')->name('index');
+            Route::post('/',                   'store')->name('store');
+            Route::put('/{id}',                'update')->name('update')->whereUuid('id');
+            Route::post('/{id}/toggle-active', 'toggleActive')->name('toggle-active')->whereUuid('id');
+            Route::post('/{id}/reset-access',  'resetAccess')->name('reset-access')->whereUuid('id');
+            Route::delete('/{id}',             'destroy')->name('destroy')->whereUuid('id');            // suppression douce
+            Route::post('/{id}/restore',       'restore')->name('restore')->whereUuid('id');
+            Route::delete('/{id}/force',       'forceDestroy')->name('force-destroy')->whereUuid('id'); // définitive
+        });
     });
 });
 
