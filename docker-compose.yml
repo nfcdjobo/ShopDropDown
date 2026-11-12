@@ -1,23 +1,16 @@
-x-app-common: &app-common
-  image: ${DOCKER_USER}/shopdropdown:${TAG:-latest}
-  restart: unless-stopped
-  env_file:
-    - .env
-  volumes:
-    - ./.env:/var/www/app/.env:ro
-    - shopdropdown_storage:/var/www/app/storage/app
-  networks:
-    - shopdropdown_net
-
 services:
 
   web:
-    <<: *app-common
+    image: ${DOCKER_USER}/shopdropdown:${TAG:-latest}
     container_name: shopdropdown
+    restart: unless-stopped
     expose:
       - "80"
+    env_file:
+      - .env
     volumes:
       - ./.env:/var/www/app/.env:ro
+      - ./docker-entrypoint.sh:/var/www/app/docker-entrypoint.sh:ro
       - shopdropdown_storage:/var/www/app/storage/app
       - shopdropdown_logs:/var/log
     labels:
@@ -35,13 +28,20 @@ services:
         condition: service_healthy
 
   queue:
-    <<: *app-common
+    image: ${DOCKER_USER}/shopdropdown:${TAG:-latest}
     container_name: shopdropdown_queue
+    restart: unless-stopped
     working_dir: /var/www/app
     user: www-data
     entrypoint: []
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=90", "--max-time=3600"]
     stop_grace_period: 90s
+    env_file:
+      - .env
+    volumes:
+      - shopdropdown_storage:/var/www/app/storage/app
+    networks:
+      - shopdropdown_net
     depends_on:
       db:
         condition: service_healthy
