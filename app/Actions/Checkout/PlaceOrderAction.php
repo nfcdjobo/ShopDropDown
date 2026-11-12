@@ -168,6 +168,7 @@ class PlaceOrderAction
         } else {
             // Client existant : confirmation commande uniquement
             $user->notify(new OrderConfirmationNotification($order));
+            
         }
 
         // --- Admins (mail + in-app database + web push si abonnés) ---

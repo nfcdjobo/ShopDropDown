@@ -30,8 +30,8 @@
             'name'               => $siteName,
             'description'        => $pageDescription,
             'url'                => url('/'),
-            'email'              => $banniere?->email ?? 'hello@ShopDrop.ci',
-            'telephone'          => $banniere?->telephone_principal ?? '+22500000000',
+            'email'              => $banniere?->email ?? 'contact@barriservices.com',
+            'telephone'          => $banniere?->telephone_principal ?? '+2250708948093',
             'currenciesAccepted' => 'XOF',
             'paymentAccepted'    => 'Cash on Delivery, Mobile Money',
             'address'            => [
@@ -57,7 +57,7 @@
 
         $contactPoints = [[
             '@type'             => 'ContactPoint',
-            'telephone'         => $banniere?->telephone_principal ?? '+22500000000',
+            'telephone'         => $banniere?->telephone_principal ?? '+2250708948093',
             'contactType'       => 'customer service',
             'areaServed'        => 'CI',
             'availableLanguage' => ['French'],
@@ -146,10 +146,10 @@
 
 
     {{-- Icônes PNG statiques (requises pour l'installation PWA) --}}
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icons/favicon-32.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icons/icon-192.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/icons/apple-touch-icon.png') }}">
-    <link rel="shortcut icon" href="{{ asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ PWA & APPARENCE MOBILE ═══════════════════════════════════════════════════════════════ --}}
     <meta name="theme-color" content="{{ $themeColor }}">
@@ -260,9 +260,7 @@
                                 <p class="text-xs text-ink-muted">Connecté en tant que</p>
                                 <p class="text-sm font-semibold truncate">{{ auth()->user()->email }}</p>
                             </div>
-                            {{-- {{ in_array(auth()->user()->role, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard' }} --}}
-                            {{-- auth()->user()->role --}}
-                            {{-- {{ dd(auth()->user()->role->value) }} --}}
+
                             <a href="{{ route( in_array(auth()->user()->role->value, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard') }}"
                             class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
                                 <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
@@ -416,8 +414,7 @@
                     Commandez aujourd'hui,<br>
                     <span class="text-terracotta-400 italic">recevez vite.</span>
                 </h3>
-                <p class="mt-4 text-ivory-50/70 max-w-md">Shop Drop vous livre partout en Côte d'Ivoire avec soin
-                    et rapidité. Paiement à la livraison, sans friction.</p>
+                <p class="mt-4 text-ivory-50/70 max-w-md">Shop Drop vous livre partout en Côte d'Ivoire avec soin et rapidité. Paiement à la livraison, sans friction.</p>
             </div>
 
             <div>
@@ -426,8 +423,7 @@
                     <li><a href="{{ route('home') }}" class="hover:text-terracotta-400">Accueil</a></li>
                     <li><a href="{{ route('cart.index') }}" class="hover:text-terracotta-400">Panier</a></li>
                     <li><a href="{{ route('checkout.index') }}" class="hover:text-terracotta-400">Commander</a></li>
-                    @auth<li><a href="{{ route('customer.dashboard') }}" class="hover:text-terracotta-400">Mon
-                            compte</a></li>@endauth
+                    @auth<li><a href="{{ route('customer.dashboard') }}" class="hover:text-terracotta-400">Mon compte</a></li>@endauth
                     <li><button type="button" data-pwa-install style="display:none"
                             class="hover:text-terracotta-400 text-left">
                             <i class="fa-solid fa-download mr-1"></i>Installer l'application</button></li>
@@ -438,8 +434,10 @@
                 <h4 class="text-sm font-semibold uppercase tracking-widest text-ivory-50/50 mb-4">Contact</h4>
                 <ul class="space-y-2 text-sm text-ivory-50/70">
                     <li><i class="fa-solid fa-location-dot mr-2 text-terracotta-400"></i>Abidjan, Côte d'Ivoire</li>
-                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>hello@ShopDrop.ci</li>
-                    <li><i class="fa-solid fa-phone mr-2 text-terracotta-400"></i>+225 00 00 00 00</li>
+                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>{{$banniere?->telephone_principal ?? "contact@barriservices.com" }}</li>
+                    @if($banniere->telephone_secondaire)
+                    <li><i class="fa-solid fa-phone mr-2 text-terracotta-400"></i>{{ $banniere?->telephone_principal }}</li>
+                    @endif
                 </ul>
             </div>
         </div>

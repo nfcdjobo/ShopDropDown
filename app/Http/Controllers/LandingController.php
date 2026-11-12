@@ -190,7 +190,6 @@ class LandingController extends Controller
         }
 
 
-        // dd($product, $relatedProducts);
         return view('landing.show', [
             'product'          => $product,
             'cart'             => $cart,

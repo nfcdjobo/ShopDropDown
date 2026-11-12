@@ -294,7 +294,7 @@ class ProductController extends Controller
                 ->with('success', 'Produit mis à jour.');
         } catch (Throwable $e) {
             DB::rollBack();
-            // dd($e->getMessage());
+            
             $this->cleanupUploadedFiles($uploadedPaths);
 
             Log::error('Erreur mise à jour produit', [
