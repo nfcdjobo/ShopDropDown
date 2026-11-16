@@ -12,7 +12,8 @@
         <link rel="shortcut icon" href="{{ asset('storage/' . $banniere->logo) }}">
         <link rel="apple-touch-icon" href="{{ asset('storage/' . $banniere->logo) }}">
     @else
-        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        <link rel="icon" type="image/x-icon" href="{{ asset('images/icons/favicon-32.png') }}">
+
     @endif
 
     {{-- Google Fonts --}}

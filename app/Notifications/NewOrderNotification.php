@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Notification envoyée aux administrateurs à chaque nouvelle commande.
@@ -85,7 +86,7 @@ class NewOrderNotification extends Notification implements ShouldQueue
      */
     public function toWebPush(object $notifiable, $notification)
     {
-        $class = \NotificationChannels\WebPush\WebPushMessage::class;
+        $class = WebPushMessage::class;
         if (!class_exists($class)) {
             return null;
         }
