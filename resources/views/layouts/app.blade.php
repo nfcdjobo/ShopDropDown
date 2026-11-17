@@ -16,6 +16,7 @@
         $pageDescription = trim($__env->yieldContent('meta_description')) ?: $siteSlogan;
         $pageKeywords    = trim($__env->yieldContent('meta_keywords')) ?: 'boutique en ligne, e-commerce, Côte d\'Ivoire, Abidjan, livraison, paiement à la livraison, '.$siteName;
         $logoUrl         = $banniere?->logo ? asset('storage/'.$banniere->logo) : null;
+        $isAdmin         = auth()->check() && in_array(auth()->user()->role->value, ['admin', 'super_admin'], true);
         $pageImage       = trim($__env->yieldContent('meta_image')) ?: ($logoUrl ?: asset('images/og-default.jpg'));
         $pageUrl         = url()->current();
         $canonicalUrl    = trim($__env->yieldContent('canonical')) ?: $pageUrl;
@@ -146,10 +147,10 @@
 
 
     {{-- Icônes PNG statiques (requises pour l'installation PWA) --}}
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/icon-192.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/apple-touch-icon.png') }}">
-    <link rel="shortcut icon" href="{{ $banniere->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════ PWA & APPARENCE MOBILE ═══════════════════════════════════════════════════════════════ --}}
     <meta name="theme-color" content="{{ $themeColor }}">
@@ -220,12 +221,21 @@
 
     {{-- =============== NAVIGATION =============== --}}
     <header class="sticky top-0 z-40 bg-ivory-50/80 backdrop-blur-md border-b border-ink/5">
-        <nav class="max-w-7xl mx-auto px-5 lg:px-10 h-16 lg:h-20 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-                <span
-                    class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm">S</span>
-                <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight">Shop<span
-                        class="text-terracotta-500">·</span>Drop</span>
+        <nav class="max-w-7xl mx-auto px-5 lg:px-10 h-16 lg:h-20 flex items-center justify-between" aria-label="Navigation principale">
+
+            <a href="{{ route('home') }}" class="flex items-center gap-2 group" aria-label="{{ $siteName }} - Retour à l'accueil">
+                @if($logoUrl)
+                    <img
+                        src="{{ $logoUrl }}"
+                        alt=""
+                        width="32"
+                        height="32"
+                        class="w-8 h-8 rounded-full object-cover"
+                    >
+                @else
+                    <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm" aria-hidden="true">{{ mb_strtoupper(mb_substr($siteName, 0, 1)) }}</span>
+                @endif
+                <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight">Shop<span class="text-terracotta-500">·</span>Drop</span>
             </a>
 
             <div class="hidden lg:flex items-center gap-10">
@@ -261,11 +271,24 @@
                                 <p class="text-sm font-semibold truncate">{{ auth()->user()->email }}</p>
                             </div>
 
-                            <a href="{{ route( in_array(auth()->user()->role->value, ['admin', 'super_admin']) ? 'admin.dashboard' : 'customer.dashboard') }}"
-                            class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                                <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
-                                Tableau de bord
-                            </a>
+                            @if($isAdmin)
+                                <a href="{{ route('admin.dashboard') }}"
+                                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                    <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
+                                    Tableau de bord
+                                </a>
+                                <a href="{{ route('customer.dashboard') }}"
+                                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                    <i class="fa-solid fa-user text-ink-muted w-4"></i>
+                                    Mon compte
+                                </a>
+                            @else
+                                <a href="{{ route('customer.dashboard') }}"
+                                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                    <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
+                                    Tableau de bord
+                                </a>
+                            @endif
                             <a href="{{ route('customer.orders.index') }}"
                             class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
                                 <i class="fa-solid fa-bag-shopping text-ink-muted w-4"></i>
@@ -333,7 +356,7 @@
                 </button>
             </div>
 
-            <nav class="flex-1 overflow-y-auto px-6 py-8 flex flex-col gap-1">
+            <nav class="flex-1 overflow-y-auto px-6 py-8 flex flex-col gap-1" aria-label="Navigation mobile">
                 @foreach ([['Boutique', route('home')], ['Coups de cœur', route('home') . '#featured'], ['À propos', route('home') . '#about'], ['Contact', route('home') . '#contact']] as [$label, $url])
                     <a @click="mobileMenu = false" href="{{ $url }}"
                         class="py-4 text-2xl font-display font-semibold border-b border-ink/5 flex items-center justify-between hover:text-terracotta-500 transition-colors">
@@ -344,6 +367,12 @@
 
                 <div class="mt-8 flex flex-col gap-3">
                     @auth
+                        @if($isAdmin)
+                            <a href="{{ route('admin.dashboard') }}"
+                                class="btn-primary px-5 py-3 rounded-full text-center text-sm font-semibold">
+                                <i class="fa-solid fa-gauge-high mr-2"></i> Tableau de bord
+                            </a>
+                        @endif
                         <a href="{{ route('customer.dashboard') }}"
                             class="btn-primary px-5 py-3 rounded-full text-center text-sm font-semibold">
                             <i class="fa-solid fa-user mr-2"></i> Mon compte
@@ -423,7 +452,12 @@
                     <li><a href="{{ route('home') }}" class="hover:text-terracotta-400">Accueil</a></li>
                     <li><a href="{{ route('cart.index') }}" class="hover:text-terracotta-400">Panier</a></li>
                     <li><a href="{{ route('checkout.index') }}" class="hover:text-terracotta-400">Commander</a></li>
-                    @auth<li><a href="{{ route('customer.dashboard') }}" class="hover:text-terracotta-400">Mon compte</a></li>@endauth
+                    @auth
+                        @if($isAdmin)
+                            <li><a href="{{ route('admin.dashboard') }}" class="hover:text-terracotta-400">Tableau de bord</a></li>
+                        @endif
+                        <li><a href="{{ route('customer.dashboard') }}" class="hover:text-terracotta-400">Mon compte</a></li>
+                    @endauth
                     <li><button type="button" data-pwa-install style="display:none"
                             class="hover:text-terracotta-400 text-left">
                             <i class="fa-solid fa-download mr-1"></i>Installer l'application</button></li>
@@ -434,9 +468,9 @@
                 <h4 class="text-sm font-semibold uppercase tracking-widest text-ivory-50/50 mb-4">Contact</h4>
                 <ul class="space-y-2 text-sm text-ivory-50/70">
                     <li><i class="fa-solid fa-location-dot mr-2 text-terracotta-400"></i>Abidjan, Côte d'Ivoire</li>
-                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>{{$banniere?->telephone_principal ?? "contact@barriservices.com" }}</li>
-                    @if($banniere->telephone_secondaire)
-                    <li><i class="fa-solid fa-phone mr-2 text-terracotta-400"></i>{{ $banniere?->telephone_principal }}</li>
+                    <li><i class="fa-solid fa-envelope mr-2 text-terracotta-400"></i>{{ $banniere?->email ?? 'contact@barriservices.com' }}</li>
+                    @if($banniere?->telephone_secondaire)
+                    <li><i class="fa-solid fa-phone mr-2 text-terracotta-400"></i>{{ $banniere->telephone_secondaire }}</li>
                     @endif
                 </ul>
             </div>
