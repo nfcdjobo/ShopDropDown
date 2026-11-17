@@ -225,13 +225,7 @@
 
             <a href="{{ route('home') }}" class="flex items-center gap-2 group" aria-label="{{ $siteName }} - Retour à l'accueil">
                 @if($logoUrl)
-                    <img
-                        src="{{ $logoUrl }}"
-                        alt=""
-                        width="32"
-                        height="32"
-                        class="w-8 h-8 rounded-full object-cover"
-                    >
+                    <img src="{{ $logoUrl }}" alt="" width="32" height="32" class="w-8 h-8 rounded-full object-cover">
                 @else
                     <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm" aria-hidden="true">{{ mb_strtoupper(mb_substr($siteName, 0, 1)) }}</span>
                 @endif
@@ -239,14 +233,10 @@
             </a>
 
             <div class="hidden lg:flex items-center gap-10">
-                <a href="{{ route('home') }}"
-                    class="text-sm font-medium hover:text-terracotta-500 transition-colors">Boutique</a>
-                <a href="{{ route('home') }}#featured"
-                    class="text-sm font-medium hover:text-terracotta-500 transition-colors">Nos coups de cœur</a>
-                <a href="{{ route('home') }}#about"
-                    class="text-sm font-medium hover:text-terracotta-500 transition-colors">À propos</a>
-                <a href="{{ route('home') }}#contact"
-                    class="text-sm font-medium hover:text-terracotta-500 transition-colors">Contact</a>
+                <a href="{{ route('home') }}" class="text-sm font-medium hover:text-terracotta-500 transition-colors">Boutique</a>
+                <a href="{{ route('home') }}#featured" class="text-sm font-medium hover:text-terracotta-500 transition-colors">Nos coups de cœur</a>
+                <a href="{{ route('home') }}#about" class="text-sm font-medium hover:text-terracotta-500 transition-colors">À propos</a>
+                <a href="{{ route('home') }}#contact" class="text-sm font-medium hover:text-terracotta-500 transition-colors">Contact</a>
             </div>
 
             <div class="flex items-center gap-2 lg:gap-4">
@@ -277,18 +267,12 @@
                                     <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
                                     Tableau de bord
                                 </a>
-                                <a href="{{ route('customer.dashboard') }}"
-                                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                                    <i class="fa-solid fa-user text-ink-muted w-4"></i>
-                                    Mon compte
-                                </a>
-                            @else
-                                <a href="{{ route('customer.dashboard') }}"
-                                class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
-                                    <i class="fa-solid fa-gauge-high text-ink-muted w-4"></i>
-                                    Tableau de bord
-                                </a>
                             @endif
+                            <a href="{{ route('customer.dashboard') }}"
+                            class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
+                                <i class="fa-solid fa-user text-ink-muted w-4"></i>
+                                Mon compte
+                            </a>
                             <a href="{{ route('customer.orders.index') }}"
                             class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-ivory-100 transition-colors">
                                 <i class="fa-solid fa-bag-shopping text-ink-muted w-4"></i>
