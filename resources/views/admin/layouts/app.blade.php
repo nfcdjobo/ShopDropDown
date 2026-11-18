@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Administration') — {{ $banniere?->appelation ?? config('app.name', 'Shop Drop') }}</title>
+    <title>@yield('title', 'Administration') — {{ $banniere?->appelation ?? config('app.name', 'Shop DropDown') }}</title>
 
     {{-- Favicon --}}
     @if($banniere?->logo)
@@ -249,8 +249,8 @@
 
         <footer class="px-4 sm:px-6 lg:px-10 py-6 text-xs text-ink-muted border-t border-ink/5">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
-                <span>© {{ date('Y') }} Shop Drop. Tous droits réservés.</span>
-                <span>v1.0 · Administration</span>
+                <span>© {{ date('Y') }} {{ $banniere?->appelation ?? 'Shop DropDown' }}. Tous droits réservés.</span>
+                <span>Administration</span>
             </div>
         </footer>
     </div>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $forced ? 'Sécurisez votre compte — Shop Drop' : 'Changer mon mot de passe')
-@section('meta_description', 'Définissez votre mot de passe personnel pour accéder à votre espace client Shop Drop.')
+@section('title', $forced ? 'Sécurisez votre compte — ' . ($banniere?->appelation ?? 'Shop DropDown') : 'Changer mon mot de passe')
+@section('meta_description', 'Définissez votre mot de passe personnel pour accéder à votre espace client ' . ($banniere?->appelation ?? 'Shop DropDown') . '.')
 
 @section('content')
 

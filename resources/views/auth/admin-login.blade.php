@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
 <head>
+
+    @php
+        $siteName        = $banniere?->appelation ?? config('app.name', 'Shop DropDown');
+        $logoUrl         = $banniere?->logo ? asset('storage/'.$banniere->logo) : null;
+    @endphp
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Connexion Administration — {{ config('app.name', 'Shop Drop') }}</title>
+    <title>Connexion Administration — {{ $banniere?->appelation ?? config('app.name', 'Shop DropDown') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,10 +31,15 @@
         {{-- Logo --}}
         <div class="mb-10 text-center">
             <div class="inline-flex items-center gap-3">
-                <span class="w-12 h-12 rounded-full bg-terracotta-500 text-white flex items-center justify-center font-display font-bold text-xl">S</span>
-                <span class="font-display text-3xl font-semibold tracking-tight">Shop<span class="text-terracotta-500">·</span>DropDown</span>
+                <a href="{{ route('home') }}" class="flex items-center gap-2 group" aria-label="{{ $siteName }} - Retour à l'accueil">
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="" width="32" height="32" class="w-8 h-8 rounded-full object-cover">
+                    @else
+                        <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm" aria-hidden="true">{{ mb_strtoupper(mb_substr($siteName, 0, 1)) }}</span>
+                    @endif
+                    <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight"> {{ $banniere?->appelation ?? 'Shop DropDown' }}
+                </a>
             </div>
-            <p class="mt-2 text-xs uppercase tracking-[.2em] text-ivory-50/40 font-semibold">Espace Administration</p>
         </div>
 
         {{-- Carte de connexion --}}
@@ -132,7 +143,7 @@
 
         {{-- Footer --}}
         <p class="mt-12 text-[10px] text-ivory-50/20 text-center">
-            © {{ date('Y') }} Shop Drop · Accès sécurisé · Toutes les tentatives sont enregistrées
+            © {{ date('Y') }} {{ $banniere?->appelation ?? 'Shop DropDown' }} · Accès sécurisé · Toutes les tentatives sont enregistrées
         </p>
     </div>
 

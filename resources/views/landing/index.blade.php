@@ -352,7 +352,7 @@
             <span class="italic">pour vous faire gagner du temps.</span>
         </h2>
         <p class="mt-6 text-ink-muted text-lg max-w-2xl mx-auto leading-relaxed reveal" style="transition-delay:.1s">
-            Chez Shop Drop, vous n'avez qu'à choisir. Pas de création de compte avant d'acheter,
+            Chez {{ $banniere?->appelation ?? 'Shop DropDown' }}, vous n'avez qu'à choisir. Pas de création de compte avant d'acheter,
             pas de paiement anticipé, pas de surprise. Nous préparons, nous livrons, vous payez sur place.
         </p>
         <div class="mt-10 reveal" style="transition-delay:.15s">

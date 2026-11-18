@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mes commandes — Shop Drop')
+@section('title', 'Mes commandes — Shop DropDown')
 
 @php
 function statusBadge(\App\Enums\OrderStatus $status): string {

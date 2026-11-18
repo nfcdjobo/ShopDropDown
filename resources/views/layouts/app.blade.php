@@ -9,7 +9,7 @@
 
     {{-- ═══════════════════════════════════════════════════════════════ PRÉPARATION DES DONNÉES SEO ═══════════════════════════════════════════════════════════════ --}}
     @php
-        $siteName        = $banniere?->appelation ?? config('app.name', 'Shop Drop');
+        $siteName        = $banniere?->appelation ?? config('app.name', 'Shop DropDown');
         $siteSlogan      = $banniere?->slogan ?? 'Produits soigneusement sélectionnés, livrés rapidement en Côte d\'Ivoire.';
         $rawTitle        = trim($__env->yieldContent('title'));
         $pageTitle       = $rawTitle ? $rawTitle.' | '.$siteName : $siteName;
@@ -229,7 +229,7 @@
                 @else
                     <span class="w-8 h-8 rounded-full bg-ink text-ivory-50 flex items-center justify-center font-display font-bold text-sm" aria-hidden="true">{{ mb_strtoupper(mb_substr($siteName, 0, 1)) }}</span>
                 @endif
-                <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight">Shop<span class="text-terracotta-500">·</span>Drop</span>
+                <span class="font-display text-xl lg:text-2xl font-semibold tracking-tight"> {{ $banniere?->appelation ?? 'Shop DropDown' }}
             </a>
 
             <div class="hidden lg:flex items-center gap-10">
@@ -427,7 +427,7 @@
                     Commandez aujourd'hui,<br>
                     <span class="text-terracotta-400 italic">recevez vite.</span>
                 </h3>
-                <p class="mt-4 text-ivory-50/70 max-w-md">Shop Drop vous livre partout en Côte d'Ivoire avec soin et rapidité. Paiement à la livraison, sans friction.</p>
+                <p class="mt-4 text-ivory-50/70 max-w-md">{{ $banniere?->appelation ?? 'Shop DropDown' }} vous livre partout en Côte d'Ivoire avec soin et rapidité. Paiement à la livraison, sans friction.</p>
             </div>
 
             <div>
@@ -462,7 +462,7 @@
         <div class="border-t border-ivory-50/10">
             <div
                 class="max-w-7xl mx-auto px-5 lg:px-10 py-6 flex flex-col sm:flex-row justify-between gap-3 text-xs text-ivory-50/50">
-                <p>© {{ date('Y') }} Shop Drop. Tous droits réservés.</p>
+                <p>© {{ date('Y') }} {{ $banniere?->appelation ?? 'Shop DropDown' }}. Tous droits réservés.</p>
                 <p>Fait avec soin à Abidjan<a href="{{ route("admin.login") }}">.</a></p>
             </div>
         </div>

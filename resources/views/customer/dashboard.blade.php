@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mon espace — Shop Drop')
+@section('title', 'Mon espace — ' . ($banniere?->appelation ?? 'Shop DropDown'))
 
 @php
 /**

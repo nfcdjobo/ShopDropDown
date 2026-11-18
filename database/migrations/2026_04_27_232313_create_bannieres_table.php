@@ -33,7 +33,7 @@ return new class extends Migration
         // ─── Donnée par défaut (ligne unique) ──────────────────────────
         DB::table('bannieres')->insert([
             'id'                                => (string) Str::uuid(),
-            'appelation'                        => 'Shop Drop',
+            'appelation'                        => 'Shop DropDown',
             'logo'                              => null,
             'slogan'                            => 'Produits soigneusement sélectionnés, livrés rapidement en Côte d\'Ivoire.',
             'telephone_principal'               => '+225 01 40 94 03 30',

@@ -14,7 +14,7 @@ class PwaController extends Controller
         $data = Cache::remember('pwa.manifest', 3600, function () {
             $banniere = Banniere::instance();
 
-            $name  = $banniere?->appelation ?? config('app.name', 'Shop Drop');
+            $name  = $banniere?->appelation ?? config('app.name', 'Shop DropDown');
             $short = mb_strimwidth($name, 0, 12, '');
 
             $manifest = [

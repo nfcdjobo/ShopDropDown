@@ -24,6 +24,7 @@
         <p class="text-center font-display text-2xl font-semibold tracking-tight mb-6">
             {{ config('app.name') }}
         </p>
+        
 
         <div class="bg-white rounded-3xl shadow-lift ring-1 ring-ink/5 p-6 sm:p-9">
 

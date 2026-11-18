@@ -1,4 +1,4 @@
-/* Service worker — Shop Drop
+/* Service worker — Shop DropDown
  * Servi à la racine (/sw.js) pour contrôler tout le site.
  * Les pages HTML ne sont JAMAIS mises en cache (panier, CSRF, prix à jour) :
  * on ne garde que les assets statiques, le logo et une page de secours hors-ligne.
