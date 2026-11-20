@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banniere; // ← adaptez au nom réel de votre modèle
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Storage;
+
+
 
 class PwaController extends Controller
 {
@@ -34,22 +37,22 @@ class PwaController extends Controller
                 'theme_color'      => '#C2410C',
                 'categories'       => ['shopping'],
                 'icons'            => [
-                    ['src' => asset('images/icons/icon-192.png'),          'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-                    ['src' => asset('images/icons/icon-512.png'),          'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
-                    ['src' => asset('images/icons/icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+                    ['src' => $banniere?->log ? Storage::url($banniere?->log) : asset('images/icons/icon-192.png'),          'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                    ['src' => $banniere?->log ? Storage::url($banniere?->log) : asset('images/icons/icon-512.png'),          'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                    ['src' =>  $banniere?->log ? Storage::url($banniere?->log) : asset('images/icons/icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
                 ],
                 'shortcuts'        => [
                     [
                         'name'      => 'Boutique',
                         'short_name'=> 'Boutique',
                         'url'       => route('home', [], false),
-                        'icons'     => [['src' => asset('images/icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
+                        'icons'     => [['src' => $banniere?->log ? Storage::url($banniere?->log) : asset('images/icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
                     ],
                     [
                         'name'      => 'Mon panier',
                         'short_name'=> 'Panier',
                         'url'       => route('cart.index', [], false),
-                        'icons'     => [['src' => asset('images/icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
+                        'icons'     => [['src' => $banniere?->log ? Storage::url($banniere?->log) : asset('images/icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
                     ],
                 ],
             ];
@@ -57,10 +60,10 @@ class PwaController extends Controller
             // Captures d'écran : l'invite d'installation devient « riche » (Chrome Android / desktop)
             $screens = [];
             if (file_exists(public_path('images/screenshots/mobile.png'))) {
-                $screens[] = ['src' => asset('images/screenshots/mobile.png'), 'sizes' => '750x1334', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'Accueil de la boutique'];
+                $screens[] = ['src' =>  $banniere?->log ? Storage::url($banniere?->log) : asset('images/screenshots/mobile.png'), 'sizes' => '750x1334', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'Accueil de la boutique'];
             }
             if (file_exists(public_path('images/screenshots/desktop.png'))) {
-                $screens[] = ['src' => asset('images/screenshots/desktop.png'), 'sizes' => '1280x720', 'type' => 'image/png', 'form_factor' => 'wide', 'label' => 'Boutique sur ordinateur'];
+                $screens[] = ['src' =>  $banniere?->log ? Storage::url($banniere?->log) : asset('images/screenshots/desktop.png'), 'sizes' => '1280x720', 'type' => 'image/png', 'form_factor' => 'wide', 'label' => 'Boutique sur ordinateur'];
             }
             if ($screens) {
                 $manifest['screenshots'] = $screens;

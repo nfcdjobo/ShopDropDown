@@ -30,7 +30,6 @@ class CartController extends Controller
     public function index(Request $request): View
     {
         $cart = $this->getCart->handle($request)->load('items.product.images');
-
         return view('cart.index', compact('cart'));
     }
 
