@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Routes publiques — Landing page & catalogue
 |--------------------------------------------------------------------------
+| /manifest.webmanifest, /offline et /sw.js sont conservés tels quels :
+| ce sont des conventions PWA (le navigateur et le service worker les attendent).
 */
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
@@ -38,7 +40,8 @@ Route::get('/sw.js', function () {
     ]);
 })->withoutMiddleware(['web']);
 
-Route::get('/catalogue/{product:slug}', [LandingController::class, 'show'])->name('products.show');
+// avant : /catalogue/{product:slug}
+Route::get('/v3dz-k8m/{product:slug}', [LandingController::class, 'show'])->name('products.show');
 
 
 
@@ -82,42 +85,44 @@ Route::prefix('k2pz-dz1')->name('checkout.')->group(function () {
 |--------------------------------------------------------------------------
 */
 
+// Nom 'password.reset' conservé (utilisé par la notification de reset de Laravel)
+// avant : /reinitialiser/{token}
 Route::middleware('guest')->group(function () {
-    Route::get('/admin/login',  [AdminAuthController::class, 'showLogin'])->name('admin.login');
-    Route::get('/reinitialiser/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::get('/n8rz-b2q/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
 });
 
 Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
 
     // ── Routes guest (redirige si déjà connecté) ─────────────────────
     Route::middleware('guest')->group(function () {
-        // ← NOMMÉE 'admin.login'
 
-        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
+        // avant : /admin/login (hors du préfixe) puis /login. Nom final : 'admin.login'
+        Route::get('/a3lz-w9v',  [AdminAuthController::class, 'showLogin'])->name('login');
+        Route::post('/a3lz-w9v', [AdminAuthController::class, 'login'])->name('login.post');
 
-        Route::get('/mot-de-passe-oublie', [AdminAuthController::class, 'showForgotPassword'])->name('password.forgot');
+        // avant : /mot-de-passe-oublie
+        Route::get('/f7kz-m2y',  [AdminAuthController::class, 'showForgotPassword'])->name('password.forgot');
+        Route::post('/f7kz-m2y', [AdminAuthController::class, 'sendResetLink'])->name('password.email');
 
-        Route::post('/mot-de-passe-oublie', [AdminAuthController::class, 'sendResetLink'])->name('password.email');
-
-        Route::get('/reinitialiser/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
-
-        Route::post('/reinitialiser', [AdminAuthController::class, 'resetPassword'])->name('password.update');
+        // avant : /reinitialiser/{token} et /reinitialiser
+        Route::get('/e5pz-t8h/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
+        Route::post('/e5pz-t8h',        [AdminAuthController::class, 'resetPassword'])->name('password.update');
     });
 
     // ── Logout (nécessite d'être connecté) ───────────────────────────
-    Route::post('/logout', [AdminAuthController::class, 'logout'])->middleware('auth')->name('logout');
+    // avant : /logout
+    Route::post('/x4nz-g6c', [AdminAuthController::class, 'logout'])->middleware('auth')->name('logout');
 
     // ── Routes protégées admin ────────────────────────────────────────
     // must.change.password : un administrateur créé avec un mot de passe provisoire est
     // redirigé vers /m7vz-c2j (PasswordChangeController) avant d'accéder au back-office.
     Route::middleware(['auth', 'is.admin', 'must.change.password'])->group(function () {
 
-
-
-        Route::prefix('banniere')->name('banniere.')->controller(BanniereController::class)->group(function () {
+        // avant : banniere
+        Route::prefix('q2mz-r9d')->name('banniere.')->controller(BanniereController::class)->group(function () {
             Route::get('/', 'edit')->name('edit');
             Route::put('/', 'update')->name('update');
-            Route::delete('/logo', 'supprimerLogo')->name('logo.supprimer');
+            Route::delete('/y3tz-k6p', 'supprimerLogo')->name('logo.supprimer'); // avant : /logo
         });
 
         // Dashboard
@@ -129,19 +134,17 @@ Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
         // Produits
         Route::resource('d1wz-u4n', AdminProductController::class)->names('products')->parameters(['d1wz-u4n' => 'product']);
 
+        // Sous-produits du package (avant : products/{product}/items)
+        Route::post('d1wz-u4n/{product}/s3kz-a7j', [AdminProductController::class, 'storeItem'])->name('products.items.store');
+        Route::delete('d1wz-u4n/{product}/s3kz-a7j/{item}', [AdminProductController::class, 'destroyItem'])->name('products.items.destroy');
 
+        // Avis curatés (avant : products/{product}/reviews)
+        Route::post('d1wz-u4n/{product}/t8hz-n5v', [ProductReviewController::class, 'store'])->name('products.reviews.store');
+        Route::delete('d1wz-u4n/{product}/t8hz-n5v/{review}', [ProductReviewController::class, 'destroy'])->name('products.reviews.destroy');
 
-        // Sous-produits du package
-        Route::post('products/{product}/items', [AdminProductController::class, 'storeItem'])->name('products.items.store');
-        Route::delete('products/{product}/items/{item}', [AdminProductController::class, 'destroyItem'])->name('products.items.destroy');
-
-        // Avis curatés
-        Route::post('products/{product}/reviews', [ProductReviewController::class, 'store'])->name('products.reviews.store');
-        Route::delete('products/{product}/reviews/{review}', [ProductReviewController::class, 'destroy'])->name('products.reviews.destroy');
-
-        // FAQs
-        Route::post('products/{product}/faqs', [ProductFaqController::class, 'store'])->name('products.faqs.store');
-        Route::delete('products/{product}/faqs/{faq}', [ProductFaqController::class, 'destroy'])->name('products.faqs.destroy');
+        // FAQs (avant : products/{product}/faqs)
+        Route::post('d1wz-u4n/{product}/w4rz-y2e', [ProductFaqController::class, 'store'])->name('products.faqs.store');
+        Route::delete('d1wz-u4n/{product}/w4rz-y2e/{faq}', [ProductFaqController::class, 'destroy'])->name('products.faqs.destroy');
 
 
         // Catégories
@@ -155,21 +158,22 @@ Route::prefix('z9qz-e3m')->name('admin.')->group(function () {
         // Détail d’un utilisateur
         Route::get('u7kz-p3x/{user}', [UserController::class, 'show'])->name('users.show');
 
+        // avant : /toggle-active
+        Route::post('u7kz-p3x/{user}/c9vz-l4b', [UserController::class, 'toggleActive'])->name('users.toggle-active');
 
-        Route::post('u7kz-p3x/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
-
-        Route::post('u7kz-p3x/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        // avant : /reset-password
+        Route::post('u7kz-p3x/{user}/j3xz-q8f', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
         // Administrateurs — réservé au super_admin (contrôle aussi fait dans le contrôleur : 403 sinon)
         Route::prefix('h4qz-t6n')->name('administrators.')->controller(AdministratorController::class)->group(function () {
             Route::get('/',                    'index')->name('index');
             Route::post('/',                   'store')->name('store');
             Route::put('/{id}',                'update')->name('update')->whereUuid('id');
-            Route::post('/{id}/toggle-active', 'toggleActive')->name('toggle-active')->whereUuid('id');
-            Route::post('/{id}/reset-access',  'resetAccess')->name('reset-access')->whereUuid('id');
+            Route::post('/{id}/k6wz-h1s',      'toggleActive')->name('toggle-active')->whereUuid('id');  // avant : /toggle-active
+            Route::post('/{id}/m5cz-d9t',      'resetAccess')->name('reset-access')->whereUuid('id');    // avant : /reset-access
             Route::delete('/{id}',             'destroy')->name('destroy')->whereUuid('id');            // suppression douce
-            Route::post('/{id}/restore',       'restore')->name('restore')->whereUuid('id');
-            Route::delete('/{id}/force',       'forceDestroy')->name('force-destroy')->whereUuid('id'); // définitive
+            Route::post('/{id}/b8qz-n3r',      'restore')->name('restore')->whereUuid('id');             // avant : /restore
+            Route::delete('/{id}/y7gz-e2u',    'forceDestroy')->name('force-destroy')->whereUuid('id'); // définitive (avant : /force)
         });
     });
 });
@@ -210,8 +214,8 @@ Route::middleware(['auth', 'must.change.password'])->prefix('f2tz-x5p')->name('c
 | Sinon elle sert de fallback pour le form de logout du layout admin.
 */
 
-
-Route::post('/logout', function () {
+// avant : /logout
+Route::post('/s9tz-v6k', function () {
 
     Auth::logout();
 

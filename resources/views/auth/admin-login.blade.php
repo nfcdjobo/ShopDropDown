@@ -11,13 +11,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Connexion Administration — {{ $banniere?->appelation ?? config('app.name', 'Shop DropDown') }}</title>
+    <meta name="copyright" content="© {{ date('Y') }} {{ $siteName }}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ $banniere?->logo ? Storage::url($banniere->logo) : asset('images/icons/favicon-32.png') }}">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="antialiased min-h-screen bg-ink text-ivory-50" x-data="{ showPwd: false }">
 
     {{-- Décor de fond --}}

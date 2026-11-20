@@ -9,4 +9,6 @@ cd /var/www/shopdropdown
 sudo docker compose pull web
 sudo docker compose up -d
 
+php artisan optimize:clear
+php artisan queue:work     
 
