@@ -23,9 +23,6 @@ services:
     networks:
       - shopdropdown_net
       - traefik_net
-    depends_on:
-      db:
-        condition: service_healthy
 
   queue:
     image: ${DOCKER_USER}/shopdropdown:${TAG:-latest}
@@ -43,32 +40,10 @@ services:
     networks:
       - shopdropdown_net
     depends_on:
-      db:
-        condition: service_healthy
       web:
         condition: service_started
 
-  db:
-    image: postgres:18
-    container_name: shopdropdown_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: barri_shopdropdown_db
-      POSTGRES_USER: barri_shopdropdown_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - shopdropdown_pgdata:/var/lib/postgresql
-      - ./init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U barri_shopdropdown_user -d barri_shopdropdown_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - shopdropdown_net
-
 volumes:
-  shopdropdown_pgdata:
   shopdropdown_storage:
   shopdropdown_logs:
 

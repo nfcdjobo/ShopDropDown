@@ -38,3 +38,4 @@ web.php.snippet
 .env.*
 !.env.example
 .remote-run.sh
+* copy*
