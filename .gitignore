@@ -39,3 +39,4 @@ web.php.snippet
 !.env.example
 .remote-run.sh
 * copy*
+*.sql

@@ -46,3 +46,4 @@ storage/framework/views/*
 bootstrap/cache/*
 .remote-run.sh
 * copy*
+*.sql
